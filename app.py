@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import LogLocator
+import io
 
 # Physical Constants
 H0_km_s_Mpc = 67.4
@@ -24,7 +25,6 @@ POPULATIONS = {
         'f_merge_fid': 0.1,
         'epsilon_gw': 0.02,
         'color': '#0072B2',
-        'ls': '-'
     },
     'IMBH-SMBH': {
         'reservoir': 'SMBH',
@@ -35,7 +35,6 @@ POPULATIONS = {
         'f_merge_fid': 0.05,
         'epsilon_gw': 0.05,
         'color': '#D55E00',
-        'ls': '-'
     },
     'EMRI': {
         'reservoir': 'NSC',
@@ -46,7 +45,6 @@ POPULATIONS = {
         'f_merge_fid': 0.1,
         'epsilon_gw': 0.05,
         'color': '#009E73',
-        'ls': '-'
     },
     'BNS': {
         'reservoir': 'STELLAR',
@@ -57,7 +55,6 @@ POPULATIONS = {
         'f_merge_fid': 1.1e-5,
         'epsilon_gw': 0.01,
         'color': '#CC79A7',
-        'ls': '-'
     },
     'Pop III': {
         'reservoir': 'STELLAR',
@@ -68,7 +65,6 @@ POPULATIONS = {
         'f_merge_fid': 3.0e-7,
         'epsilon_gw': 0.05,
         'color': '#56B4E9',
-        'ls': '-'
     },
     'Stellar BBH': {
         'reservoir': 'STELLAR',
@@ -79,11 +75,10 @@ POPULATIONS = {
         'f_merge_fid': 1.8e-5,
         'epsilon_gw': 0.05,
         'color': '#E69F00',
-        'ls': '-'
     },
 }
 
-# Label positions (tuned)
+# Tuned label positions
 labels_pos = {
     'SMBHB': (1e-8, 1e-11),
     'IMBH-SMBH': (4.4e-2, 1e-9),
@@ -215,20 +210,20 @@ how the GWB amplitudes scale.
 
 # Sidebar controls
 st.sidebar.header("Mass Reservoirs")
-st.sidebar.markdown("Adjust reservoir densities (M☉/Mpc³)")
+st.sidebar.markdown("Adjust reservoir densities (M_sun/Mpc^3)")
 
 rho_smbh = st.sidebar.slider(
-    "ρ_SMBH (×10⁵)",
+    "rho_SMBH (x10^5)",
     min_value=1.0, max_value=10.0, value=4.2, step=0.1
 ) * 1e5
 
 rho_stellar = st.sidebar.slider(
-    "ρ_★ (×10⁸)",
+    "rho_star (x10^8)",
     min_value=1.0, max_value=10.0, value=5.9, step=0.1
 ) * 1e8
 
 rho_nsc = st.sidebar.slider(
-    "ρ_NSC (×10⁶)",
+    "rho_NSC (x10^6)",
     min_value=0.5, max_value=5.0, value=1.4, step=0.1
 ) * 1e6
 
@@ -254,8 +249,8 @@ ax.set_xlim(1e-9, 3e3)
 ax.set_ylim(1e-18, 1e-6)
 ax.set_xscale('log')
 ax.set_yscale('log')
-ax.set_xlabel(r'Frequency $f$ [Hz]', fontsize=14)
-ax.set_ylabel(r'$\Omega_{\rm gw}(f)$', fontsize=14)
+ax.set_xlabel('Frequency f [Hz]', fontsize=14)
+ax.set_ylabel(r'$\Omega_{\mathrm{gw}}(f)$', fontsize=14)
 
 ax.xaxis.set_major_locator(LogLocator(base=10, numticks=20))
 ax.yaxis.set_major_locator(LogLocator(base=10, numticks=20))
@@ -267,7 +262,7 @@ if show_detectors:
     muares = get_muares_sensitivity(f_grid, T_yrs=10.0)
     mask_mu = (f_grid > 1e-7) & (f_grid < 1e-1) & (muares < omega_cutoff)
     ax.loglog(f_grid[mask_mu], muares[mask_mu], color='gray', ls='-.', alpha=0.6, lw=1.2)
-    ax.text(1e-6, 1e-11, 'μAres', fontsize=10, color='gray', ha='left')
+    ax.text(1e-6, 1e-11, 'muAres', fontsize=10, color='gray', ha='left')
 
     bbo = get_bbo_approx(f_grid)
     mask_bbo = (bbo > 0) & (bbo < omega_cutoff)
@@ -326,6 +321,17 @@ for spine in ax.spines.values():
 plt.tight_layout()
 st.pyplot(fig)
 
+# Download button for PDF
+img = io.BytesIO()
+fig.savefig(img, format='pdf', dpi=300, bbox_inches='tight')
+img.seek(0)
+st.download_button(
+    label="Download Figure as PDF",
+    data=img,
+    file_name="gw_ceiling.pdf",
+    mime="application/pdf"
+)
+
 # Info panel
 st.markdown("---")
 st.subheader("Current Amplitude Values")
@@ -342,5 +348,7 @@ for i, name in enumerate(selected_pops):
 
 st.markdown("---")
 st.markdown("""
-**Reference:** Table I values from the paper. Amplitudes scale as A ∝ √ρ_reservoir.
+**Reference:** Mingarelli (2026), *Energetic Ceilings of Astrophysical Gravitational-Wave Backgrounds*
+
+Amplitudes scale as A proportional to sqrt(rho_reservoir) relative to fiducial values from Table I.
 """)
