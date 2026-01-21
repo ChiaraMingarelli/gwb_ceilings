@@ -611,7 +611,7 @@ if show_pta:
     st.subheader("PTA Sensitivity Curves")
     st.markdown("""
     PTA sensitivity curves are calibrated to each array's published GWB amplitude at fixed γ=13/3.
-    Projections (IPTA DR3, SKA-era) are scaled from similar existing arrays. "PTA sensitivity curves use the formalism of [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341), implemented in [hasasia](https://github.com/Hazboun6/hasasia).    
+    Projections (IPTA DR3, SKA-era) are scaled from similar existing arrays. PTA sensitivity curves use the formalism of [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341), implemented in [hasasia](https://github.com/Hazboun6/hasasia).    
     """)
     
     pta_table = """
