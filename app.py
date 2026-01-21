@@ -435,7 +435,7 @@ if show_detectors:
     bbo = get_bbo_approx(f_grid)
     mask_bbo = (bbo > 0) & (bbo < omega_cutoff)
     plot_bbo = omega_to_hc(f_grid, bbo) if use_hc else bbo
-    ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color='gray', ls='-', alpha=0.6, lw=1.2)
+    ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color='gray', ls='--', alpha=0.6, lw=1.2)
     ax.text(5e-2, omega_to_hc(np.array([5e-2]), np.array([2e-17]))[0] if use_hc else 2e-17, 'BBO', fontsize=10, color='gray', ha='center')
 
     lisa = get_lisa_sensitivity(f_grid)
@@ -458,15 +458,15 @@ if show_detectors:
 
 # PTA sensitivity curves - part of detector curves
 if show_detectors:
-    # Distinct colors and line styles for each PTA
+    # Distinct colors and line styles for each PTA (all broken lines)
     pta_styles = {
-        'NANOGrav 15yr': {'color': '#E41A1C', 'ls': '-'},      # red, solid
-        'EPTA DR2': {'color': '#377EB8', 'ls': '--'},          # blue, dashed
-        'PPTA DR3': {'color': '#4DAF4A', 'ls': '-.'},          # green, dash-dot
-        'MPTA': {'color': '#984EA3', 'ls': ':'},               # purple, dotted
-        'CPTA': {'color': '#FF7F00', 'ls': '-'},               # orange, solid
-        'IPTA DR3 (proj.)': {'color': '#A65628', 'ls': '--'},  # brown, dashed
-        'SKA-era': {'color': '#F781BF', 'ls': '-.'},           # pink, dash-dot
+        'NANOGrav 15yr': {'color': '#E41A1C', 'ls': '--'},     # red, dashed
+        'EPTA DR2': {'color': '#377EB8', 'ls': '-.'},          # blue, dash-dot
+        'PPTA DR3': {'color': '#4DAF4A', 'ls': ':'},           # green, dotted
+        'MPTA': {'color': '#984EA3', 'ls': '--'},              # purple, dashed
+        'CPTA': {'color': '#FF7F00', 'ls': '-.'},              # orange, dash-dot
+        'IPTA DR3 (proj.)': {'color': '#A65628', 'ls': ':'},   # brown, dotted
+        'SKA-era': {'color': '#F781BF', 'ls': '--'},           # pink, dashed
         'Custom': {'color': '#999999', 'ls': ':'},             # gray, dotted
     }
     
