@@ -234,32 +234,32 @@ def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cade
     # (sensitivity ~ detected amplitude for a ~3-5 sigma detection)
     calibrations = {
         # Detected signals - calibrated to each array's published amplitude
-        'NANOGrav 15yr': {'h_c_min': 2.0e-15, 'ref': 'Agazie+ 2023, A=2.4e-15'},
-        'EPTA DR2': {'h_c_min': 2.5e-15, 'ref': 'EPTA+ 2023, A=2.95e-15'},
-        'PPTA DR3': {'h_c_min': 1.8e-15, 'ref': 'Reardon+ 2023, A=2.0e-15'},
-        'CPTA': {'h_c_min': 4.0e-15, 'ref': 'Xu+ 2023, A=4.6e-15'},
-        # Shorter baseline arrays - scale from similar arrays
-        'MPTA': {'h_c_min': 3.5e-15, 'ref': 'Miles+ 2023, scaled'},
-        # Projections - scaled from contributing arrays
-        'IPTA DR3 (projected)': {'h_c_min': 8.0e-16, 'ref': 'Projected ~2.5x improvement'},
-        'SKA-era': {'h_c_min': 7.0e-17, 'ref': 'Shannon+ 2025, ~30x improvement'},
-        'Custom': {'h_c_min': 2.0e-15, 'ref': 'User-defined, scaled from NG15'},
+        'NANOGrav 15yr': {'h_c_min': 2.0e-15, 'n': 67, 'T': 15.0, 'sigma': 300, 'cad': 26},
+        'EPTA DR2': {'h_c_min': 2.5e-15, 'n': 25, 'T': 24.0, 'sigma': 500, 'cad': 20},
+        'PPTA DR3': {'h_c_min': 1.8e-15, 'n': 30, 'T': 18.0, 'sigma': 400, 'cad': 26},
+        'CPTA': {'h_c_min': 4.0e-15, 'n': 57, 'T': 3.4, 'sigma': 100, 'cad': 26},
+        'MPTA': {'h_c_min': 3.5e-15, 'n': 88, 'T': 4.5, 'sigma': 200, 'cad': 26},
+        'IPTA DR3 (projected)': {'h_c_min': 8.0e-16, 'n': 115, 'T': 20.0, 'sigma': 200, 'cad': 26},
+        'SKA-era': {'h_c_min': 7.0e-17, 'n': 200, 'T': 20.0, 'sigma': 50, 'cad': 52},
     }
     
     # Get calibration for this preset
-    if preset in calibrations:
+    if preset in calibrations and preset != 'Custom':
         h_c_min = calibrations[preset]['h_c_min']
     else:
-        # Custom: scale from NANOGrav 15yr reference
+        # Custom: scale from NANOGrav 15yr based on user parameters
         n_ref, T_ref, sigma_ref, cad_ref = 67, 15.0, 300.0, 26
+        h_c_ref = 2.0e-15
+        
         N_pairs_ref = n_ref * (n_ref - 1) / 2
         N_pairs = n_pulsars * (n_pulsars - 1) / 2
         
+        # Sensitivity scales as: sigma / sqrt(N_pairs * T * cadence)
         scaling = (sigma_ns / sigma_ref) * \
-                  np.sqrt(N_pairs_ref / N_pairs) * \
-                  np.sqrt(T_ref / timespan) * \
-                  np.sqrt(cad_ref / cadence)
-        h_c_min = 2.0e-15 * scaling
+                  np.sqrt(N_pairs_ref / max(N_pairs, 1)) * \
+                  np.sqrt(T_ref / max(timespan, 0.1)) * \
+                  np.sqrt(cad_ref / max(cadence, 1))
+        h_c_min = h_c_ref * scaling
     
     # Frequency-dependent sensitivity shape (from PTA physics)
     f_low = 1.5 / T_sec  # Timing model cutoff
@@ -276,6 +276,9 @@ def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cade
     # Convert to Omega_gw: Omega = (2π²/3H₀²) f² h_c²
     prefac = 2 * np.pi**2 / (3 * H0**2)
     omega_gw = prefac * freqs**2 * h_c**2
+    
+    # Cap at integrated astrophysical ceiling (Omega_gw < 1e-7)
+    omega_gw = np.minimum(omega_gw, 1e-7)
     
     return freqs, omega_gw
 
