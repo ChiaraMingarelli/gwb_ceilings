@@ -368,24 +368,25 @@ PTA_PRESETS = {
 
 # PTA parameters
 with st.sidebar.expander("PTA Parameters", expanded=True):
-    pta_preset = st.selectbox("Preset", list(PTA_PRESETS.keys()), index=0)
+    pta_presets = st.multiselect(
+        "Select PTAs", 
+        [k for k in PTA_PRESETS.keys() if k != 'Custom'],
+        default=['NANOGrav 15yr']
+    )
     
-    if pta_preset != 'Custom':
-        preset = PTA_PRESETS[pta_preset]
-        pta_npsr = preset['n_pulsars']
-        pta_timespan = preset['timespan']
-        pta_sigma = preset['sigma_ns']
-        pta_cadence = preset['cadence']
-        st.caption(f"N={pta_npsr}, T={pta_timespan}yr, σ={pta_sigma}ns, cad={pta_cadence}/yr")
-    else:
-        pta_npsr = st.slider("Number of pulsars", 10, 300, 67)
-        pta_timespan = st.slider("Timespan (years)", 5.0, 30.0, 15.0, step=0.5)
-        pta_sigma = st.select_slider(
+    # Custom PTA option
+    show_custom_pta = st.checkbox("Add custom PTA")
+    if show_custom_pta:
+        pta_npsr_custom = st.slider("Number of pulsars", 10, 300, 67)
+        pta_timespan_custom = st.slider("Timespan (years)", 5.0, 30.0, 15.0, step=0.5)
+        pta_sigma_custom = st.select_slider(
             "Timing precision (ns)", 
             options=[30, 50, 100, 200, 300, 500, 1000],
             value=300
         )
-        pta_cadence = st.slider("Cadence (obs/year)", 12, 52, 26)
+        pta_cadence_custom = st.slider("Cadence (obs/year)", 12, 52, 26)
+    else:
+        pta_npsr_custom, pta_timespan_custom, pta_sigma_custom, pta_cadence_custom = 67, 15.0, 300, 26
 
 selected_pops = st.sidebar.multiselect(
     "Select populations",
@@ -455,25 +456,57 @@ if show_detectors:
     ax.loglog(f_grid[mask_ce], plot_ce[mask_ce], color='gray', ls=':', alpha=0.6, lw=1.2)
     ax.text(100, omega_to_hc(np.array([100]), np.array([1e-14]))[0] if use_hc else 1e-14, 'CE', fontsize=10, color='gray', ha='center')
 
-# PTA sensitivity (analytic approximation) - part of detector curves
+# PTA sensitivity curves - part of detector curves
 if show_detectors:
-    pta_freqs, pta_omega = get_pta_sensitivity_analytic(
-        n_pulsars=pta_npsr,
-        timespan=pta_timespan,
-        sigma_ns=pta_sigma,
-        cadence=pta_cadence,
-        preset=pta_preset
-    )
-    # Less restrictive mask - show curve even if above ceiling
-    mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
-    if np.any(mask_pta):
-        plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
-        ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
-                 color='purple', ls='--', alpha=0.8, lw=1.5)
-        # Position label near the curve minimum - show preset name
-        label_text = pta_preset.replace(' (projected)', '').replace('yr', '')
-        label_y = omega_to_hc(np.array([5e-8]), np.array([5e-10]))[0] if use_hc else 5e-10
-        ax.text(5e-8, label_y, label_text, fontsize=9, color='purple', ha='center')
+    # Colors for different PTAs
+    pta_colors = {
+        'NANOGrav 15yr': '#8B008B',  # dark magenta
+        'EPTA DR2': '#4B0082',        # indigo
+        'PPTA DR3': '#800080',        # purple
+        'MPTA': '#9932CC',            # dark orchid
+        'CPTA': '#BA55D3',            # medium orchid
+        'IPTA DR3 (proj.)': '#DDA0DD', # plum
+        'SKA-era': '#FF00FF',         # magenta
+        'Custom': '#FF1493',          # deep pink
+    }
+    
+    # Plot each selected PTA
+    for i, pta_name in enumerate(pta_presets):
+        preset = PTA_PRESETS[pta_name]
+        pta_freqs, pta_omega = get_pta_sensitivity_analytic(
+            n_pulsars=preset['n_pulsars'],
+            timespan=preset['timespan'],
+            sigma_ns=preset['sigma_ns'],
+            cadence=preset['cadence'],
+            preset=pta_name
+        )
+        mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
+        if np.any(mask_pta):
+            plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
+            ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
+                     color=pta_colors.get(pta_name, 'purple'), ls='--', alpha=0.8, lw=1.5)
+            # Offset labels vertically to avoid overlap
+            label_text = pta_name.replace(' (proj.)', '').replace('yr', '').replace('NANOGrav 15', 'NG15')
+            base_y = 5e-10 * (2**i)  # offset each label
+            label_y = omega_to_hc(np.array([5e-8]), np.array([base_y]))[0] if use_hc else base_y
+            ax.text(5e-8, label_y, label_text, fontsize=8, color=pta_colors.get(pta_name, 'purple'), ha='center')
+    
+    # Custom PTA if enabled
+    if show_custom_pta:
+        pta_freqs, pta_omega = get_pta_sensitivity_analytic(
+            n_pulsars=pta_npsr_custom,
+            timespan=pta_timespan_custom,
+            sigma_ns=pta_sigma_custom,
+            cadence=pta_cadence_custom,
+            preset='Custom'
+        )
+        mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
+        if np.any(mask_pta):
+            plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
+            ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
+                     color=pta_colors['Custom'], ls='--', alpha=0.8, lw=1.5)
+            label_y = omega_to_hc(np.array([5e-8]), np.array([5e-9]))[0] if use_hc else 5e-9
+            ax.text(5e-8, label_y, 'Custom', fontsize=8, color=pta_colors['Custom'], ha='center')
 
 # DWD foreground
 if show_dwd:
@@ -605,7 +638,7 @@ This tension suggests one or more of:
 # =============================================================================
 # PTA SECTION (moved to bottom)
 # =============================================================================
-if show_detectors:
+if show_detectors and (len(pta_presets) > 0 or show_custom_pta):
     st.markdown("---")
     st.subheader("PTA Sensitivity Curves")
     st.markdown("""
