@@ -351,7 +351,6 @@ rho_nsc = st.sidebar.slider(
 st.sidebar.header("Display Options")
 y_axis_unit = st.sidebar.radio("Y-axis", ["Ω_gw", "h_c (characteristic strain)"], index=0, horizontal=True)
 show_detectors = st.sidebar.checkbox("Show detector curves", value=True)
-show_pta = st.sidebar.checkbox("Show PTA sensitivity", value=True)
 show_dwd = st.sidebar.checkbox("Show DWD foreground", value=True)
 show_ceiling = st.sidebar.checkbox("Show integrated ceiling", value=True)
 
@@ -456,8 +455,8 @@ if show_detectors:
     ax.loglog(f_grid[mask_ce], plot_ce[mask_ce], color='gray', ls=':', alpha=0.6, lw=1.2)
     ax.text(100, omega_to_hc(np.array([100]), np.array([1e-14]))[0] if use_hc else 1e-14, 'CE', fontsize=10, color='gray', ha='center')
 
-# PTA sensitivity (analytic approximation)
-if show_pta:
+# PTA sensitivity (analytic approximation) - part of detector curves
+if show_detectors:
     pta_freqs, pta_omega = get_pta_sensitivity_analytic(
         n_pulsars=pta_npsr,
         timespan=pta_timespan,
@@ -606,7 +605,7 @@ This tension suggests one or more of:
 # =============================================================================
 # PTA SECTION (moved to bottom)
 # =============================================================================
-if show_pta:
+if show_detectors:
     st.markdown("---")
     st.subheader("PTA Sensitivity Curves")
     st.markdown("""
