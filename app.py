@@ -198,11 +198,12 @@ def scale_amplitude(A_bench, reservoir, rho_smbh, rho_stellar, rho_nsc):
     return A_bench
 
 
-def get_pta_sensitivity_analytic(n_pulsars=34, timespan=15.0, sigma_ns=100, cadence=26):
+def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cadence=26):
     """
-    Analytic PTA sensitivity curve in Omega_gw.
+    PTA sensitivity curve in Omega_gw, calibrated to NANOGrav 15yr detection.
     
-    Based on Hazboun+ 2019 (PRD 100, 104028) and Moore+ 2015 formalism.
+    NANOGrav 15yr (Agazie et al. 2023) detected A = 2.4e-15 at f = 1/yr.
+    Sensitivity curves are scaled relative to this detection.
     
     Parameters:
     -----------
@@ -219,50 +220,51 @@ def get_pta_sensitivity_analytic(n_pulsars=34, timespan=15.0, sigma_ns=100, cade
     --------
     freqs, omega_gw : arrays
     """
-    # Convert units
-    T_yr = timespan
-    T_sec = timespan * 365.25 * 24 * 3600
-    sigma_sec = sigma_ns * 1e-9
-    
-    # Frequency array (nHz band)
+    # Frequency array
     f_yr = 1.0 / (365.25 * 24 * 3600)  # 1/year in Hz
-    f_min = 1.0 / T_sec  # Lowest frequency from timespan
-    f_max = cadence / (2 * 365.25 * 24 * 3600)  # Nyquist from cadence
-    freqs = np.logspace(np.log10(f_min * 0.3), np.log10(f_max), 100)
+    T_sec = timespan * 365.25 * 24 * 3600
+    f_min = 1.0 / T_sec
+    f_max = cadence / (2 * 365.25 * 24 * 3600)
+    freqs = np.logspace(np.log10(f_min * 0.5), np.log10(f_max), 100)
     
-    # Number of observations and pulsar pairs
-    N_obs = int(timespan * cadence)
+    # Reference: NANOGrav 15yr parameters and detection
+    # Detected A = 2.4e-15 at f = 1/yr, so sensitivity ~ 2e-15 at most sensitive freq
+    n_ref, T_ref, sigma_ref, cad_ref = 67, 15.0, 300.0, 26
+    N_pairs_ref = n_ref * (n_ref - 1) / 2
+    
+    # Current array parameters
     N_pairs = n_pulsars * (n_pulsars - 1) / 2
     
-    # Characteristic strain sensitivity (simplified model from Moore+ 2015)
-    # h_c ~ sigma / sqrt(N_psr * T) * (f / f_yr)
-    # with corrections for timing model fitting at low f
+    # Sensitivity scaling relative to NANOGrav 15yr
+    # h_c sensitivity scales as: sigma / sqrt(N_pairs * T * cadence)
+    scaling = (sigma_ns / sigma_ref) * \
+              np.sqrt(N_pairs_ref / N_pairs) * \
+              np.sqrt(T_ref / timespan) * \
+              np.sqrt(cad_ref / cadence)
     
-    h_c_ref = sigma_sec * np.sqrt(12.0 * f_yr) / np.sqrt(n_pulsars * T_sec)
+    # NANOGrav 15yr: h_c sensitivity ~ 2e-15 at most sensitive frequency (~5 nHz)
+    h_c_min_ng15 = 2.0e-15
+    h_c_min = h_c_min_ng15 * scaling
     
-    # Frequency-dependent sensitivity
-    # Rises at low frequencies (timing model fitting removes power)
-    # Relatively flat in middle band
-    x = freqs / f_yr
+    # Frequency-dependent sensitivity shape (from PTA physics)
+    # - Low f: rises due to timing model fitting (removes f < 1/T)
+    # - High f: rises due to white noise dominance
+    # - Minimum around f ~ 3-5/T
     
-    # Timing model suppression (fitting for position, proper motion, spindown)
-    timing_suppression = np.sqrt(1 + (0.5 / x)**6)
+    f_low = 1.5 / T_sec  # Timing model cutoff
+    f_high = cadence * f_yr / 3  # White noise takeover
     
-    # High frequency white noise rise
-    high_f_factor = np.sqrt(1 + (x / (cadence / 2))**2)
+    # Shape function: minimum near geometric mean of f_low and f_high
+    low_f_rise = (f_low / freqs)**4
+    high_f_rise = (freqs / f_high)**2
+    shape = np.sqrt(1 + low_f_rise + high_f_rise)
     
-    # Combined characteristic strain sensitivity
-    h_c = h_c_ref * timing_suppression * high_f_factor / np.sqrt(x)
+    # Normalize so minimum = h_c_min
+    h_c = h_c_min * shape / np.min(shape)
     
-    # Hellings-Downs improvement for GWB (cross-correlation)
-    # Factor of ~sqrt(N_pairs * <chi^2>) ~ sqrt(N_pairs) * 0.2
-    hd_improvement = np.sqrt(N_pairs) * 0.2
-    h_c_gwb = h_c / hd_improvement
-    
-    # Convert to Omega_gw
-    # Omega_gw = (2 * pi^2 / 3 H0^2) * f^2 * h_c^2
+    # Convert to Omega_gw: Omega = (2π²/3H₀²) f² h_c²
     prefac = 2 * np.pi**2 / (3 * H0**2)
-    omega_gw = prefac * freqs**2 * h_c_gwb**2
+    omega_gw = prefac * freqs**2 * h_c**2
     
     return freqs, omega_gw
 
@@ -481,8 +483,9 @@ if show_pta:
     st.markdown("---")
     st.subheader("PTA Sensitivity Curve Parameters")
     st.markdown("""
-    The PTA sensitivity curve uses an analytic approximation based on [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341). 
-    Preset parameters are estimates based on published data releases:
+    The PTA sensitivity curve uses an analytic approximation calibrated to the NANOGrav 15yr GWB detection 
+    ([Agazie et al. 2023](https://arxiv.org/abs/2306.16213)). Other arrays are scaled relative to NANOGrav 15yr 
+    based on N_psr, timespan, σ_RMS, and cadence. Preset parameters are estimates:
     """)
     
     pta_table = """
@@ -497,7 +500,7 @@ if show_pta:
 | SKA-era | 200 | 20 yr | 50 ns | 52/yr | [Shannon et al. (2025)](https://arxiv.org/abs/2512.16163) |
 """
     st.markdown(pta_table)
-    st.caption("Note: σ_RMS values are approximate array-averaged timing precisions. Actual arrays have heterogeneous noise properties. IPTA DR3 and SKA-era are projections.")
+    st.caption("Note: Sensitivity curves are calibrated to the NANOGrav 15yr detection (A = 2.4×10⁻¹⁵ at 1/yr; Agazie et al. 2023). σ_RMS values are approximate array-averaged timing precisions. IPTA DR3 and SKA-era are projections.")
 
 # Info panel
 st.markdown("---")
