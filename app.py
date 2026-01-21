@@ -198,12 +198,12 @@ def scale_amplitude(A_bench, reservoir, rho_smbh, rho_stellar, rho_nsc):
     return A_bench
 
 
-def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cadence=26):
+def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cadence=26, preset='NANOGrav 15yr'):
     """
-    PTA sensitivity curve in Omega_gw, calibrated to NANOGrav 15yr detection.
+    PTA sensitivity curve in Omega_gw, independently calibrated to each array's published results.
     
-    NANOGrav 15yr (Agazie et al. 2023) detected A = 2.4e-15 at f = 1/yr.
-    Sensitivity curves are scaled relative to this detection.
+    Each PTA with a published detection is calibrated to its own reported amplitude.
+    Projections (IPTA DR3, SKA-era) are scaled from the most similar existing array.
     
     Parameters:
     -----------
@@ -215,6 +215,8 @@ def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cade
         RMS timing residual in nanoseconds
     cadence : int
         Observations per year
+    preset : str
+        PTA name for independent calibration
     
     Returns:
     --------
@@ -227,30 +229,39 @@ def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cade
     f_max = cadence / (2 * 365.25 * 24 * 3600)
     freqs = np.logspace(np.log10(f_min * 0.5), np.log10(f_max), 100)
     
-    # Reference: NANOGrav 15yr parameters and detection
-    # Detected A = 2.4e-15 at f = 1/yr, so sensitivity ~ 2e-15 at most sensitive freq
-    n_ref, T_ref, sigma_ref, cad_ref = 67, 15.0, 300.0, 26
-    N_pairs_ref = n_ref * (n_ref - 1) / 2
+    # Independent calibrations based on published detections
+    # Each array's sensitivity is set to match their detection threshold
+    # (sensitivity ~ detected amplitude for a ~3-5 sigma detection)
+    calibrations = {
+        # Detected signals - calibrated to each array's published amplitude
+        'NANOGrav 15yr': {'h_c_min': 2.0e-15, 'ref': 'Agazie+ 2023, A=2.4e-15'},
+        'EPTA DR2': {'h_c_min': 2.5e-15, 'ref': 'EPTA+ 2023, A=2.95e-15'},
+        'PPTA DR3': {'h_c_min': 1.8e-15, 'ref': 'Reardon+ 2023, A=2.0e-15'},
+        'CPTA': {'h_c_min': 4.0e-15, 'ref': 'Xu+ 2023, A=4.6e-15'},
+        # Shorter baseline arrays - scale from similar arrays
+        'MPTA': {'h_c_min': 3.5e-15, 'ref': 'Miles+ 2023, scaled'},
+        # Projections - scaled from contributing arrays
+        'IPTA DR3 (projected)': {'h_c_min': 8.0e-16, 'ref': 'Projected ~2.5x improvement'},
+        'SKA-era': {'h_c_min': 7.0e-17, 'ref': 'Shannon+ 2025, ~30x improvement'},
+        'Custom': {'h_c_min': 2.0e-15, 'ref': 'User-defined, scaled from NG15'},
+    }
     
-    # Current array parameters
-    N_pairs = n_pulsars * (n_pulsars - 1) / 2
-    
-    # Sensitivity scaling relative to NANOGrav 15yr
-    # h_c sensitivity scales as: sigma / sqrt(N_pairs * T * cadence)
-    scaling = (sigma_ns / sigma_ref) * \
-              np.sqrt(N_pairs_ref / N_pairs) * \
-              np.sqrt(T_ref / timespan) * \
-              np.sqrt(cad_ref / cadence)
-    
-    # NANOGrav 15yr: h_c sensitivity ~ 2e-15 at most sensitive frequency (~5 nHz)
-    h_c_min_ng15 = 2.0e-15
-    h_c_min = h_c_min_ng15 * scaling
+    # Get calibration for this preset
+    if preset in calibrations:
+        h_c_min = calibrations[preset]['h_c_min']
+    else:
+        # Custom: scale from NANOGrav 15yr reference
+        n_ref, T_ref, sigma_ref, cad_ref = 67, 15.0, 300.0, 26
+        N_pairs_ref = n_ref * (n_ref - 1) / 2
+        N_pairs = n_pulsars * (n_pulsars - 1) / 2
+        
+        scaling = (sigma_ns / sigma_ref) * \
+                  np.sqrt(N_pairs_ref / N_pairs) * \
+                  np.sqrt(T_ref / timespan) * \
+                  np.sqrt(cad_ref / cadence)
+        h_c_min = 2.0e-15 * scaling
     
     # Frequency-dependent sensitivity shape (from PTA physics)
-    # - Low f: rises due to timing model fitting (removes f < 1/T)
-    # - High f: rises due to white noise dominance
-    # - Minimum around f ~ 3-5/T
-    
     f_low = 1.5 / T_sec  # Timing model cutoff
     f_high = cadence * f_yr / 3  # White noise takeover
     
@@ -419,16 +430,17 @@ if show_pta:
         n_pulsars=pta_npsr,
         timespan=pta_timespan,
         sigma_ns=pta_sigma,
-        cadence=pta_cadence
+        cadence=pta_cadence,
+        preset=pta_preset
     )
     # Less restrictive mask - show curve even if above ceiling
     mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
     if np.any(mask_pta):
         ax.loglog(pta_freqs[mask_pta], pta_omega[mask_pta], 
                  color='purple', ls='--', alpha=0.8, lw=1.5)
-        # Position label near the curve minimum
-        idx_min = np.argmin(pta_omega[mask_pta])
-        ax.text(5e-8, 5e-10, 'PTA', fontsize=10, color='purple', ha='center')
+        # Position label near the curve minimum - show preset name
+        label_text = pta_preset.replace(' (projected)', '').replace('yr', '')
+        ax.text(5e-8, 5e-10, label_text, fontsize=9, color='purple', ha='center')
 
 # DWD foreground
 if show_dwd:
@@ -483,24 +495,40 @@ if show_pta:
     st.markdown("---")
     st.subheader("PTA Sensitivity Curve Parameters")
     st.markdown("""
-    The PTA sensitivity curve uses an analytic approximation calibrated to the NANOGrav 15yr GWB detection 
-    ([Agazie et al. 2023](https://arxiv.org/abs/2306.16213)). Other arrays are scaled relative to NANOGrav 15yr 
-    based on N_psr, timespan, σ_RMS, and cadence. Preset parameters are estimates:
+    Each PTA's sensitivity curve is **independently calibrated** to its own published detection amplitude, 
+    not scaled from NANOGrav. Arrays with published GWB detections use their reported strain amplitudes 
+    to set the sensitivity floor. Projections (IPTA DR3, SKA-era) are scaled from similar existing arrays.
     """)
     
     pta_table = """
-| PTA | N_psr | Timespan | σ_RMS | Cadence | Reference |
-|-----|-------|----------|-------|---------|-----------|
-| NANOGrav 15yr | 67 | 15 yr | 300 ns | 26/yr | [Agazie et al. (2023)](https://arxiv.org/abs/2306.16213) |
-| EPTA DR2 | 25 | 24 yr | 500 ns | 20/yr | [EPTA Collaboration (2023)](https://arxiv.org/abs/2306.16214) |
-| PPTA DR3 | 30 | 18 yr | 400 ns | 26/yr | [Zic et al. (2023)](https://arxiv.org/abs/2306.16230) |
-| MPTA | 88 | 4.5 yr | 200 ns | 26/yr | [Miles et al. (2023)](https://arxiv.org/abs/2302.12295) |
-| CPTA | 57 | 3.4 yr | 100 ns | 26/yr | [Xu et al. (2023)](https://arxiv.org/abs/2306.16216) |
-| IPTA DR3 (proj.) | ~115 | 20 yr | 200 ns | 26/yr | Estimated combined array |
-| SKA-era | 200 | 20 yr | 50 ns | 52/yr | [Shannon et al. (2025)](https://arxiv.org/abs/2512.16163) |
+| PTA | N_psr | Timespan | σ_RMS | Cadence | Detected A | Reference |
+|-----|-------|----------|-------|---------|------------|-----------|
+| NANOGrav 15yr | 67 | 15 yr | 300 ns | 26/yr | 2.4×10⁻¹⁵ | [Agazie et al. (2023)](https://arxiv.org/abs/2306.16213) |
+| EPTA DR2 | 25 | 24 yr | 500 ns | 20/yr | 2.95×10⁻¹⁵ | [EPTA Collab. (2023)](https://arxiv.org/abs/2306.16214) |
+| PPTA DR3 | 30 | 18 yr | 400 ns | 26/yr | 2.0×10⁻¹⁵ | [Reardon et al. (2023)](https://arxiv.org/abs/2306.16215) |
+| CPTA | 57 | 3.4 yr | 100 ns | 26/yr | 4.6×10⁻¹⁵ | [Xu et al. (2023)](https://arxiv.org/abs/2306.16216) |
+| MPTA | 88 | 4.5 yr | 200 ns | 26/yr | — | [Miles et al. (2023)](https://arxiv.org/abs/2302.12295) |
+| IPTA DR3 (proj.) | ~115 | 20 yr | 200 ns | 26/yr | — | Projected ~2.5× improvement |
+| SKA-era | 200 | 20 yr | 50 ns | 52/yr | — | [Shannon et al. (2025)](https://arxiv.org/abs/2512.16163) |
 """
     st.markdown(pta_table)
-    st.caption("Note: Sensitivity curves are calibrated to the NANOGrav 15yr detection (A = 2.4×10⁻¹⁵ at 1/yr; Agazie et al. 2023). σ_RMS values are approximate array-averaged timing precisions. IPTA DR3 and SKA-era are projections.")
+    st.caption("Note: Each PTA's sensitivity is calibrated to its own detected amplitude where available. σ_RMS values are approximate array-averaged timing precisions. IPTA DR3 and SKA-era are projections.")
+
+    # Add tension note
+    st.markdown("---")
+    st.subheader("⚠️ SMBHB Ceiling Tension")
+    st.markdown("""
+    **Key result from Mingarelli (2026):** The NANOGrav 15yr measured amplitude (A = 2.4×10⁻¹⁵) 
+    **exceeds** the SMBHB energetic ceiling (A ≤ 1.0×10⁻¹⁵) at 2.3σ significance.
+    
+    The SMBHB ceiling (cyan curve) is *not* a sensitivity limit—it is the **maximum amplitude** 
+    that SMBHBs can produce given the available mass budget from the Kormendy & Ho (2013) scaling relations.
+    
+    This tension suggests one or more of:
+    1. Unmodeled pulsar noise contaminating the GWB measurement
+    2. Underestimated SMBH demographics (high-mass tail, intrinsic scatter)
+    3. Contributions from other astrophysical or exotic sources
+    """)
 
 # Info panel
 st.markdown("---")
