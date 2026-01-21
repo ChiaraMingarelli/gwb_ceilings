@@ -88,14 +88,14 @@ labels_pos_omega = {
     'Stellar BBH': (10 * 10**0.3, 3e-15)
 }
 
-# Tuned label positions for h_c mode
+# Tuned label positions for h_c mode (carefully positioned to avoid overlaps)
 labels_pos_hc = {
-    'SMBHB': (1e-8, 3e-15),
-    'IMBH-SMBH': (1e-2, 3e-21),
-    'EMRI': (3e-4, 1e-20),
-    'Pop III': (0.3, 3e-25),
-    'BNS': (0.3, 1e-24),
-    'Stellar BBH': (30, 3e-25)
+    'SMBHB': (3e-9, 8e-15),
+    'IMBH-SMBH': (2e-2, 1e-21),
+    'EMRI': (2e-5, 1e-19),
+    'Pop III': (0.05, 8e-25),
+    'BNS': (0.5, 3e-24),
+    'Stellar BBH': (80, 8e-25)
 }
 
 # Detector label positions for Omega_gw mode
@@ -109,11 +109,11 @@ detector_labels_omega = {
 
 # Detector label positions for h_c mode
 detector_labels_hc = {
-    'μAres': (1e-6, 5e-19),
-    'BBO': (5e-2, 3e-25),
-    'LISA': (2e-5, 3e-17),
-    'aLIGO': (280, 5e-22),
-    'CE': (100, 5e-25),
+    'μAres': (3e-5, 1e-17),
+    'BBO': (3, 1e-24),
+    'LISA': (5e-4, 1e-17),
+    'aLIGO': (50, 3e-22),
+    'CE': (20, 3e-25),
 }
 
 display_names = {
@@ -522,12 +522,18 @@ if show_detectors:
             plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
             ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
                      color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
-            # Place label at curve minimum
+            # Place label at curve minimum, offset to avoid overlap
             min_idx = np.argmin(plot_pta[mask_pta])
             label_x = pta_freqs[mask_pta][min_idx]
-            label_y = plot_pta[mask_pta][min_idx] * 0.5  # slightly below curve
+            # In h_c mode, put label above curve; in omega mode, put below
+            if use_hc:
+                label_y = plot_pta[mask_pta][min_idx] * 3  # above curve
+                va = 'bottom'
+            else:
+                label_y = plot_pta[mask_pta][min_idx] * 0.3  # below curve
+                va = 'top'
             label_text = pta_name.replace(' (proj.)', '*').replace('NANOGrav ', 'NG').replace('yr', '')
-            ax.text(label_x, label_y, label_text, fontsize=10, color=style['color'], ha='center', va='top')
+            ax.text(label_x, label_y, label_text, fontsize=10, color=style['color'], ha='center', va=va)
     
     # Custom PTA if enabled
     if show_custom_pta:
@@ -546,8 +552,13 @@ if show_detectors:
                      color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
             min_idx = np.argmin(plot_pta[mask_pta])
             label_x = pta_freqs[mask_pta][min_idx]
-            label_y = plot_pta[mask_pta][min_idx] * 0.5
-            ax.text(label_x, label_y, 'Custom', fontsize=10, color=style['color'], ha='center', va='top')
+            if use_hc:
+                label_y = plot_pta[mask_pta][min_idx] * 3
+                va = 'bottom'
+            else:
+                label_y = plot_pta[mask_pta][min_idx] * 0.3
+                va = 'top'
+            ax.text(label_x, label_y, 'Custom', fontsize=10, color=style['color'], ha='center', va=va)
 
 # DWD foreground
 if show_dwd:
@@ -556,8 +567,8 @@ if show_dwd:
     if np.any(mask_wd):
         if use_hc:
             hc_wd = omega_to_hc(f_grid, omega_wd)
-            ax.fill_between(f_grid[mask_wd], 1e-26, hc_wd[mask_wd], color='gray', alpha=0.3, linewidth=0)
-            ax.text(7e-4, 3e-19, 'DWD', fontsize=15, color='gray', ha='center', fontweight='bold')
+            ax.fill_between(f_grid[mask_wd], 1e-26, hc_wd[mask_wd], color='gray', alpha=0.15, linewidth=0)
+            ax.text(2e-3, 5e-18, 'DWD', fontsize=12, color='dimgray', ha='center', fontweight='bold')
         else:
             ax.fill_between(f_grid[mask_wd], 1e-25, omega_wd[mask_wd], color='gray', alpha=0.3, linewidth=0)
             ax.text(7e-4, 1e-11, 'DWD', fontsize=15, color='gray', ha='center', fontweight='bold')
@@ -569,7 +580,7 @@ if show_ceiling:
         f_ceil = np.logspace(-9, 3, 100)
         hc_ceil = omega_to_hc(f_ceil, np.full_like(f_ceil, 1e-7))
         ax.loglog(f_ceil, hc_ceil, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-        ax.text(1e-3, 5e-18, 'Integrated Ceiling', color='red', fontsize=14, fontweight='bold', ha='center')
+        ax.text(1e-1, 3e-17, 'Integrated Ceiling', color='red', fontsize=12, fontweight='bold', ha='center')
     else:
         ax.axhline(y=1e-7, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
         ax.text(1e-3, 1.8e-7, 'Integrated Ceiling', color='red', fontsize=14, fontweight='bold', ha='center')
@@ -587,15 +598,22 @@ for name in selected_pops:
         if use_hc:
             hc_pop = omega_to_hc(f_grid, omega)
             ax.loglog(f_grid[valid], hc_pop[valid], color=params['color'], lw=2.5, alpha=1.0)
-            ax.fill_between(f_grid[valid], 1e-26, hc_pop[valid], color=params['color'], alpha=0.15, linewidth=0)
+            ax.fill_between(f_grid[valid], 1e-26, hc_pop[valid], color=params['color'], alpha=0.08, linewidth=0)
         else:
             ax.loglog(f_grid[valid], omega[valid], color=params['color'], lw=2.5, alpha=1.0)
             ax.fill_between(f_grid[valid], 1e-25, omega[valid], color=params['color'], alpha=0.15, linewidth=0)
         lx, ly = pop_labels.get(name, (1e-4, 1e-15))
         display_name = display_names.get(name, name)
-        ha = 'right' if name == 'EMRI' else ('left' if name == 'IMBH-SMBH' else 'center')
-        va = 'bottom' if name == 'EMRI' else 'center'
-        ax.text(lx, ly, display_name, fontsize=18, color=params['color'], fontweight='bold', ha=ha, va=va)
+        # Different alignment for h_c mode vs omega mode
+        if use_hc:
+            ha = 'left'
+            va = 'bottom'
+            fontsize = 14
+        else:
+            ha = 'right' if name == 'EMRI' else ('left' if name == 'IMBH-SMBH' else 'center')
+            va = 'bottom' if name == 'EMRI' else 'center'
+            fontsize = 16
+        ax.text(lx, ly, display_name, fontsize=fontsize, color=params['color'], fontweight='bold', ha=ha, va=va)
 
 ax.tick_params(axis='both', which='major', labelsize=12, length=6)
 ax.tick_params(axis='both', which='minor', length=3)
