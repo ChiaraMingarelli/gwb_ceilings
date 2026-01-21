@@ -395,29 +395,6 @@ selected_pops = st.sidebar.multiselect(
 )
 
 # =============================================================================
-# TABLE I - Population Parameters (Prominent placement)
-# =============================================================================
-st.markdown("---")
-st.subheader("Table I: GWB Population Parameters")
-
-table1 = """
-| Population | Reservoir | ρ (M☉/Mpc³) | f_merge | ε_gw | f_ref (Hz) | A_ceiling | Band |
-|------------|-----------|-------------|---------|------|------------|-----------|------|
-| **SMBHBs** | SMBH | 4.2×10⁵ | 0.1 | 0.02 | 3.2×10⁻⁸ | 1.0×10⁻¹⁵ | PTA |
-| **IMBH-SMBH** | SMBH | 4.2×10⁵ | 0.05 | 0.05 | 3×10⁻³ | 1.1×10⁻²⁰ | LISA |
-| **EMRI** | NSC | 1.4×10⁶ | 0.1 | 0.05 | 10⁻² | 1.1×10⁻²⁰ | LISA |
-| **BNS** | Stellar | 5.9×10⁸ | 1.1×10⁻⁵ | 0.01 | 0.1 | 6.7×10⁻²⁴ | Ground |
-| **Pop III BBH** | Stellar | 5.9×10⁸ | 3×10⁻⁷ | 0.05 | 0.1 | 4.9×10⁻²⁴ | Ground |
-| **Stellar BBH** | Stellar | 5.9×10⁸ | 1.8×10⁻⁵ | 0.05 | 25 | 9.5×10⁻²⁵ | Ground |
-"""
-st.markdown(table1)
-st.caption("""
-**ρ**: Mass density reservoir. **f_merge**: Fraction of reservoir that merges within a Hubble time. 
-**ε_gw**: Radiative efficiency. **A_ceiling**: Maximum characteristic strain amplitude at f_ref.
-Amplitudes scale as A ∝ √ρ relative to fiducial values.
-""")
-
-# =============================================================================
 # MAIN FIGURE
 # =============================================================================
 
@@ -571,6 +548,29 @@ st.download_button(
 )
 
 # =============================================================================
+# TABLE I - Population Parameters
+# =============================================================================
+st.markdown("---")
+st.subheader("Table I: GWB Population Parameters")
+
+table1 = """
+| Population | Reservoir | ρ (M☉/Mpc³) | f_merge | ε_gw | f_ref (Hz) | A_ceiling | Band |
+|------------|-----------|-------------|---------|------|------------|-----------|------|
+| **SMBHBs** | SMBH | 4.2×10⁵ | 0.1 | 0.02 | 3.2×10⁻⁸ | 1.0×10⁻¹⁵ | PTA |
+| **IMBH-SMBH** | SMBH | 4.2×10⁵ | 0.05 | 0.05 | 3×10⁻³ | 1.1×10⁻²⁰ | LISA |
+| **EMRI** | NSC | 1.4×10⁶ | 0.1 | 0.05 | 10⁻² | 1.1×10⁻²⁰ | LISA |
+| **BNS** | Stellar | 5.9×10⁸ | 1.1×10⁻⁵ | 0.01 | 0.1 | 6.7×10⁻²⁴ | Ground |
+| **Pop III BBH** | Stellar | 5.9×10⁸ | 3×10⁻⁷ | 0.05 | 0.1 | 4.9×10⁻²⁴ | Ground |
+| **Stellar BBH** | Stellar | 5.9×10⁸ | 1.8×10⁻⁵ | 0.05 | 25 | 9.5×10⁻²⁵ | Ground |
+"""
+st.markdown(table1)
+st.caption("""
+**ρ**: Mass density reservoir. **f_merge**: Fraction of reservoir that merges within a Hubble time. 
+**ε_gw**: Radiative efficiency. **A_ceiling**: Maximum characteristic strain amplitude at f_ref.
+Amplitudes scale as A ∝ √ρ relative to fiducial values.
+""")
+
+# =============================================================================
 # Current Amplitude Values
 # =============================================================================
 st.markdown("---")
@@ -611,7 +611,7 @@ if show_pta:
     st.subheader("PTA Sensitivity Curves")
     st.markdown("""
     PTA sensitivity curves are calibrated to each array's published GWB amplitude at fixed γ=13/3.
-    Projections (IPTA DR3, SKA-era) are scaled from similar existing arrays. PTA sensitivity curves use the formalism of [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341), implemented in [hasasia](https://github.com/Hazboun6/hasasia).    
+    Projections (IPTA DR3, SKA-era) are scaled from similar existing arrays.
     """)
     
     pta_table = """
@@ -628,4 +628,4 @@ if show_pta:
     st.markdown(pta_table)
     st.caption("All amplitudes A are at **fixed γ=13/3** (α=-2/3). σ_RMS values are approximate array-averaged timing precisions.")
     st.caption("IPTA DR3 scaling: h_c ∝ 1/√(N_pairs × T), where N_pairs = N(N-1)/2. With ~115 pulsars (6555 pairs vs NANOGrav's 2211) and 25-year baseline, improvement ≈ √(3.0 × 1.7) ≈ 2.2×, with additional gains from combined noise modeling.")
-    
+    st.caption("PTA sensitivity curves use the formalism of [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341), implemented in [hasasia](https://github.com/Hazboun6/hasasia).")
