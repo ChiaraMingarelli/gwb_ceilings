@@ -377,7 +377,9 @@ rho_nsc = st.sidebar.slider(
 ) * 1e6
 
 st.sidebar.header("Display Options")
-y_axis_unit = st.sidebar.radio("Y-axis", ["Ω_gw", "h_c (characteristic strain)"], index=0, horizontal=True)
+# Y-axis toggle temporarily disabled - always use Omega_gw
+# y_axis_unit = st.sidebar.radio("Y-axis", ["Ω_gw", "h_c (characteristic strain)"], index=0, horizontal=True)
+y_axis_unit = "Ω_gw"  # Fixed to Omega_gw for now
 show_detectors = st.sidebar.checkbox("Show detector curves", value=True)
 show_dwd = st.sidebar.checkbox("Show DWD foreground", value=True)
 show_ceiling = st.sidebar.checkbox("Show integrated ceiling", value=True)
