@@ -202,6 +202,9 @@ def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cade
     """
     PTA sensitivity curve in Omega_gw, independently calibrated to each array's published results.
     
+    Uses the formalism of Hazboun, Romano & Smith (2019), PRD 100, 104028.
+    https://github.com/Hazboun6/hasasia
+    
     Each PTA with a published detection is calibrated to its own reported amplitude.
     Projections (IPTA DR3, SKA-era) are scaled from the most similar existing array.
     
@@ -292,12 +295,14 @@ def omega_to_hc(freqs, omega_gw):
 
 # Streamlit app
 st.set_page_config(page_title="GW Background Ceilings", layout="wide")
-st.title("Gravitational Wave Background Ceilings")
+st.title("Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds")
 
 st.markdown("""
 Interactive visualization of astrophysical gravitational wave background ceilings 
 based on energy reservoir constraints. Adjust the mass density reservoirs to see 
 how the GWB amplitudes scale.
+
+**Reference:** Mingarelli (2026), *Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds*
 """)
 
 # Sidebar controls
@@ -388,6 +393,33 @@ selected_pops = st.sidebar.multiselect(
     list(POPULATIONS.keys()),
     default=list(POPULATIONS.keys())
 )
+
+# =============================================================================
+# TABLE I - Population Parameters (Prominent placement)
+# =============================================================================
+st.markdown("---")
+st.subheader("Table I: GWB Population Parameters")
+
+table1 = """
+| Population | Reservoir | ρ (M☉/Mpc³) | f_merge | ε_gw | f_ref (Hz) | A_ceiling | Band |
+|------------|-----------|-------------|---------|------|------------|-----------|------|
+| **SMBHBs** | SMBH | 4.2×10⁵ | 0.1 | 0.02 | 3.2×10⁻⁸ | 1.0×10⁻¹⁵ | PTA |
+| **IMBH-SMBH** | SMBH | 4.2×10⁵ | 0.05 | 0.05 | 3×10⁻³ | 1.1×10⁻²⁰ | LISA |
+| **EMRI** | NSC | 1.4×10⁶ | 0.1 | 0.05 | 10⁻² | 1.1×10⁻²⁰ | LISA |
+| **BNS** | Stellar | 5.9×10⁸ | 1.1×10⁻⁵ | 0.01 | 0.1 | 6.7×10⁻²⁴ | Ground |
+| **Pop III BBH** | Stellar | 5.9×10⁸ | 3×10⁻⁷ | 0.05 | 0.1 | 4.9×10⁻²⁴ | Ground |
+| **Stellar BBH** | Stellar | 5.9×10⁸ | 1.8×10⁻⁵ | 0.05 | 25 | 9.5×10⁻²⁵ | Ground |
+"""
+st.markdown(table1)
+st.caption("""
+**ρ**: Mass density reservoir. **f_merge**: Fraction of reservoir that merges within a Hubble time. 
+**ε_gw**: Radiative efficiency. **A_ceiling**: Maximum characteristic strain amplitude at f_ref.
+Amplitudes scale as A ∝ √ρ relative to fiducial values.
+""")
+
+# =============================================================================
+# MAIN FIGURE
+# =============================================================================
 
 # Create figure
 fig, ax = plt.subplots(figsize=(14, 7))
@@ -538,13 +570,48 @@ st.download_button(
     mime="application/pdf"
 )
 
-# PTA presets information
+# =============================================================================
+# Current Amplitude Values
+# =============================================================================
+st.markdown("---")
+st.subheader("Current Amplitude Values")
+cols = st.columns(3)
+for i, name in enumerate(selected_pops):
+    params = POPULATIONS[name]
+    A_current = scale_amplitude(params['A_bench'], params['reservoir'], rho_smbh, rho_stellar, rho_nsc)
+    col_idx = i % 3
+    cols[col_idx].metric(
+        display_names[name],
+        f"A = {A_current:.2e}",
+        f"f_ref = {params['f_ref']:.2e} Hz"
+    )
+
+# =============================================================================
+# SMBHB Ceiling Tension
+# =============================================================================
+st.markdown("---")
+st.subheader("SMBHB Ceiling Tension")
+st.markdown("""
+**Key result:** All PTA-measured GWB amplitudes **exceed** the SMBHB energetic ceiling (A ≤ 1.0×10⁻¹⁵).
+
+The SMBHB ceiling (cyan curve) is *not* a sensitivity limit—it is the **maximum amplitude** 
+that SMBHBs can produce given the available mass budget from the Kormendy & Ho (2013) scaling relations.
+
+This tension suggests one or more of:
+1. Unmodeled pulsar noise contaminating the GWB measurement
+2. Underestimated SMBH demographics (high-mass tail, intrinsic scatter)
+3. Contributions from exotic physics
+""")
+
+# =============================================================================
+# PTA SECTION (moved to bottom)
+# =============================================================================
 if show_pta:
     st.markdown("---")
-    st.subheader("PTA Sensitivity Curve Parameters")
+    st.subheader("PTA Sensitivity Curves")
     st.markdown("""
-    PTAs with published GWB evidence use their reported strain amplitudes 
-    to set the sensitivity floor. Projections (IPTA DR3, SKA-era) are scaled from similar existing arrays.
+    PTA sensitivity curves are calibrated to each array's published GWB amplitude at fixed γ=13/3.
+    Projections (IPTA DR3, SKA-era) are scaled from similar existing arrays.
     """)
     
     pta_table = """
@@ -559,41 +626,5 @@ if show_pta:
 | SKA-era | 200 | 20 yr | 50 ns | 52/yr | — | [Shannon et al. (2025)](https://arxiv.org/abs/2512.16163) |
 """
     st.markdown(pta_table)
-    st.caption("Note: All amplitudes A are at **fixed γ=13/3** (α=-2/3). Each PTA's sensitivity is calibrated to its published GWB amplitude. σ_RMS values are approximate array-averaged timing precisions. IPTA DR3 and SKA-era are projections.")
-
-    # Add tension note
-    st.markdown("---")
-    st.subheader("SMBHB Ceiling Tension")
-    st.markdown("""
-    **Important result from Mingarelli (2026):** All PTA-measured GWB amplitudes
-    **exceed** the SMBHB energetic ceiling (A ≤ 1.0×10⁻¹⁵).
-    
-    The SMBHB ceiling (cyan curve) is *not* a sensitivity limit—it is the **maximum amplitude** 
-    that SMBHBs can produce given the available mass budget from the Kormendy & Ho (2013) scaling relations.
-    
-    This tension suggests one or more of:
-    1. Unmodeled pulsar noise contaminating the GWB measurement
-    2. Underestimated SMBH demographics (high-mass tail, intrinsic scatter)
-    3. Contributions from exotic physics.
-    """)
-
-# Info panel
-st.markdown("---")
-st.subheader("Current Amplitude Values")
-cols = st.columns(3)
-for i, name in enumerate(selected_pops):
-    params = POPULATIONS[name]
-    A_current = scale_amplitude(params['A_bench'], params['reservoir'], rho_smbh, rho_stellar, rho_nsc)
-    col_idx = i % 3
-    cols[col_idx].metric(
-        display_names[name],
-        f"A = {A_current:.2e}",
-        f"f_ref = {params['f_ref']:.2e} Hz"
-    )
-
-st.markdown("---")
-st.markdown("""
-**Reference:** Mingarelli (2026), *Energetic Ceilings of Astrophysical Gravitational-Wave Backgrounds*
-
-Amplitudes scale as A proportional to sqrt(rho_reservoir) relative to fiducial values from Table I.
-""")
+    st.caption("All amplitudes A are at **fixed γ=13/3** (α=-2/3). σ_RMS values are approximate array-averaged timing precisions.")
+    st.caption("PTA sensitivity curves use the formalism of [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341), implemented in [hasasia](https://github.com/Hazboun6/hasasia).")
