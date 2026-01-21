@@ -458,16 +458,16 @@ if show_detectors:
 
 # PTA sensitivity curves - part of detector curves
 if show_detectors:
-    # Colors for different PTAs
-    pta_colors = {
-        'NANOGrav 15yr': '#8B008B',  # dark magenta
-        'EPTA DR2': '#4B0082',        # indigo
-        'PPTA DR3': '#800080',        # purple
-        'MPTA': '#9932CC',            # dark orchid
-        'CPTA': '#BA55D3',            # medium orchid
-        'IPTA DR3 (proj.)': '#DDA0DD', # plum
-        'SKA-era': '#FF00FF',         # magenta
-        'Custom': '#FF1493',          # deep pink
+    # Distinct colors and line styles for each PTA
+    pta_styles = {
+        'NANOGrav 15yr': {'color': '#E41A1C', 'ls': '-'},      # red, solid
+        'EPTA DR2': {'color': '#377EB8', 'ls': '--'},          # blue, dashed
+        'PPTA DR3': {'color': '#4DAF4A', 'ls': '-.'},          # green, dash-dot
+        'MPTA': {'color': '#984EA3', 'ls': ':'},               # purple, dotted
+        'CPTA': {'color': '#FF7F00', 'ls': '-'},               # orange, solid
+        'IPTA DR3 (proj.)': {'color': '#A65628', 'ls': '--'},  # brown, dashed
+        'SKA-era': {'color': '#F781BF', 'ls': '-.'},           # pink, dash-dot
+        'Custom': {'color': '#999999', 'ls': ':'},             # gray, dotted
     }
     
     # Plot each selected PTA
@@ -482,14 +482,16 @@ if show_detectors:
         )
         mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
         if np.any(mask_pta):
+            style = pta_styles.get(pta_name, {'color': 'gray', 'ls': '-'})
             plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
             ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
-                     color=pta_colors.get(pta_name, 'purple'), ls='--', alpha=0.8, lw=1.5)
-            # Offset labels vertically to avoid overlap
-            label_text = pta_name.replace(' (proj.)', '').replace('yr', '').replace('NANOGrav 15', 'NG15')
-            base_y = 5e-10 * (2**i)  # offset each label
-            label_y = omega_to_hc(np.array([5e-8]), np.array([base_y]))[0] if use_hc else base_y
-            ax.text(5e-8, label_y, label_text, fontsize=8, color=pta_colors.get(pta_name, 'purple'), ha='center')
+                     color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
+            # Place label at curve minimum
+            min_idx = np.argmin(plot_pta[mask_pta])
+            label_x = pta_freqs[mask_pta][min_idx]
+            label_y = plot_pta[mask_pta][min_idx] * 0.5  # slightly below curve
+            label_text = pta_name.replace(' (proj.)', '*').replace('NANOGrav ', 'NG').replace('yr', '')
+            ax.text(label_x, label_y, label_text, fontsize=10, color=style['color'], ha='center', va='top')
     
     # Custom PTA if enabled
     if show_custom_pta:
@@ -502,11 +504,14 @@ if show_detectors:
         )
         mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
         if np.any(mask_pta):
+            style = pta_styles['Custom']
             plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
             ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
-                     color=pta_colors['Custom'], ls='--', alpha=0.8, lw=1.5)
-            label_y = omega_to_hc(np.array([5e-8]), np.array([5e-9]))[0] if use_hc else 5e-9
-            ax.text(5e-8, label_y, 'Custom', fontsize=8, color=pta_colors['Custom'], ha='center')
+                     color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
+            min_idx = np.argmin(plot_pta[mask_pta])
+            label_x = pta_freqs[mask_pta][min_idx]
+            label_y = plot_pta[mask_pta][min_idx] * 0.5
+            ax.text(label_x, label_y, 'Custom', fontsize=10, color=style['color'], ha='center', va='top')
 
 # DWD foreground
 if show_dwd:
