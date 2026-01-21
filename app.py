@@ -202,7 +202,7 @@ def get_pta_sensitivity_analytic(n_pulsars=34, timespan=15.0, sigma_ns=100, cade
     """
     Analytic PTA sensitivity curve in Omega_gw.
     
-    Based on Hazboun+ 2019 (PRD 100, 104028) formalism.
+    Based on Hazboun+ 2019 (PRD 100, 104028) and Moore+ 2015 formalism.
     
     Parameters:
     -----------
@@ -220,38 +220,49 @@ def get_pta_sensitivity_analytic(n_pulsars=34, timespan=15.0, sigma_ns=100, cade
     freqs, omega_gw : arrays
     """
     # Convert units
+    T_yr = timespan
     T_sec = timespan * 365.25 * 24 * 3600
     sigma_sec = sigma_ns * 1e-9
     
-    # Frequency array
+    # Frequency array (nHz band)
+    f_yr = 1.0 / (365.25 * 24 * 3600)  # 1/year in Hz
     f_min = 1.0 / T_sec  # Lowest frequency from timespan
     f_max = cadence / (2 * 365.25 * 24 * 3600)  # Nyquist from cadence
-    freqs = np.logspace(np.log10(f_min * 0.5), np.log10(f_max), 100)
+    freqs = np.logspace(np.log10(f_min * 0.3), np.log10(f_max), 100)
     
-    # Number of observations
+    # Number of observations and pulsar pairs
     N_obs = int(timespan * cadence)
+    N_pairs = n_pulsars * (n_pulsars - 1) / 2
     
-    # Effective strain noise PSD (simplified model)
-    # S_h(f) ~ 12 * pi^2 * f^2 * sigma^2 / (N_psr * T * N_obs)
-    # with low-frequency suppression from timing model fitting
-    f_low = 1.0 / T_sec
+    # Characteristic strain sensitivity (simplified model from Moore+ 2015)
+    # h_c ~ sigma / sqrt(N_psr * T) * (f / f_yr)
+    # with corrections for timing model fitting at low f
     
-    # Hellings-Downs factor for GWB (~0.2 for N>>1)
-    hd_factor = 0.2
+    h_c_ref = sigma_sec * np.sqrt(12.0 * f_yr) / np.sqrt(n_pulsars * T_sec)
     
-    # Strain PSD
-    S_h = (12 * np.pi**2 * freqs**2 * sigma_sec**2) / (n_pulsars * hd_factor * T_sec * N_obs)
+    # Frequency-dependent sensitivity
+    # Rises at low frequencies (timing model fitting removes power)
+    # Relatively flat in middle band
+    x = freqs / f_yr
     
-    # Low-frequency degradation from fitting timing model (quadratic spindown)
-    S_h *= (1 + (f_low / freqs)**4)
+    # Timing model suppression (fitting for position, proper motion, spindown)
+    timing_suppression = np.sqrt(1 + (0.5 / x)**6)
     
-    # High-frequency degradation 
-    S_h *= (1 + (freqs / f_max)**2)
+    # High frequency white noise rise
+    high_f_factor = np.sqrt(1 + (x / (cadence / 2))**2)
+    
+    # Combined characteristic strain sensitivity
+    h_c = h_c_ref * timing_suppression * high_f_factor / np.sqrt(x)
+    
+    # Hellings-Downs improvement for GWB (cross-correlation)
+    # Factor of ~sqrt(N_pairs * <chi^2>) ~ sqrt(N_pairs) * 0.2
+    hd_improvement = np.sqrt(N_pairs) * 0.2
+    h_c_gwb = h_c / hd_improvement
     
     # Convert to Omega_gw
-    # Omega_gw = (2 * pi^2 / 3 H0^2) * f^2 * h_c^2 = (2 * pi^2 / 3 H0^2) * f^3 * S_h
+    # Omega_gw = (2 * pi^2 / 3 H0^2) * f^2 * h_c^2
     prefac = 2 * np.pi**2 / (3 * H0**2)
-    omega_gw = prefac * freqs**3 * S_h
+    omega_gw = prefac * freqs**2 * h_c_gwb**2
     
     return freqs, omega_gw
 
@@ -315,16 +326,38 @@ show_pta = st.sidebar.checkbox("Show PTA sensitivity", value=True)
 show_dwd = st.sidebar.checkbox("Show DWD foreground", value=True)
 show_ceiling = st.sidebar.checkbox("Show integrated ceiling", value=True)
 
-# PTA parameters (in expander)
-with st.sidebar.expander("PTA Parameters"):
-    pta_npsr = st.slider("Number of pulsars", 10, 100, 34)
-    pta_timespan = st.slider("Timespan (years)", 5.0, 20.0, 15.0, step=0.5)
-    pta_sigma = st.select_slider(
-        "Timing precision (ns)", 
-        options=[50, 100, 200, 500, 1000],
-        value=100
-    )
-    pta_cadence = st.slider("Cadence (obs/year)", 12, 52, 26)
+# PTA presets
+PTA_PRESETS = {
+    'NANOGrav 15yr': {'n_pulsars': 67, 'timespan': 15.0, 'sigma_ns': 300, 'cadence': 26},
+    'EPTA DR2': {'n_pulsars': 25, 'timespan': 24.0, 'sigma_ns': 500, 'cadence': 20},
+    'PPTA DR3': {'n_pulsars': 30, 'timespan': 18.0, 'sigma_ns': 400, 'cadence': 26},
+    'MPTA': {'n_pulsars': 88, 'timespan': 4.5, 'sigma_ns': 200, 'cadence': 26},
+    'CPTA': {'n_pulsars': 57, 'timespan': 3.4, 'sigma_ns': 100, 'cadence': 26},
+    'IPTA DR3 (proj.)': {'n_pulsars': 115, 'timespan': 20.0, 'sigma_ns': 200, 'cadence': 26},
+    'SKA-era': {'n_pulsars': 200, 'timespan': 20.0, 'sigma_ns': 50, 'cadence': 52},
+    'Custom': None
+}
+
+# PTA parameters
+with st.sidebar.expander("PTA Parameters", expanded=True):
+    pta_preset = st.selectbox("Preset", list(PTA_PRESETS.keys()), index=0)
+    
+    if pta_preset != 'Custom':
+        preset = PTA_PRESETS[pta_preset]
+        pta_npsr = preset['n_pulsars']
+        pta_timespan = preset['timespan']
+        pta_sigma = preset['sigma_ns']
+        pta_cadence = preset['cadence']
+        st.caption(f"N={pta_npsr}, T={pta_timespan}yr, σ={pta_sigma}ns, cad={pta_cadence}/yr")
+    else:
+        pta_npsr = st.slider("Number of pulsars", 10, 300, 67)
+        pta_timespan = st.slider("Timespan (years)", 5.0, 30.0, 15.0, step=0.5)
+        pta_sigma = st.select_slider(
+            "Timing precision (ns)", 
+            options=[30, 50, 100, 200, 300, 500, 1000],
+            value=300
+        )
+        pta_cadence = st.slider("Cadence (obs/year)", 12, 52, 26)
 
 selected_pops = st.sidebar.multiselect(
     "Select populations",
@@ -386,11 +419,14 @@ if show_pta:
         sigma_ns=pta_sigma,
         cadence=pta_cadence
     )
-    mask_pta = (pta_omega > 1e-20) & (pta_omega < omega_cutoff)
+    # Less restrictive mask - show curve even if above ceiling
+    mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
     if np.any(mask_pta):
         ax.loglog(pta_freqs[mask_pta], pta_omega[mask_pta], 
                  color='purple', ls='--', alpha=0.8, lw=1.5)
-        ax.text(3e-9, 3e-9, 'PTA', fontsize=10, color='purple', ha='center')
+        # Position label near the curve minimum
+        idx_min = np.argmin(pta_omega[mask_pta])
+        ax.text(5e-8, 5e-10, 'PTA', fontsize=10, color='purple', ha='center')
 
 # DWD foreground
 if show_dwd:
@@ -439,6 +475,29 @@ st.download_button(
     file_name="gw_ceiling.pdf",
     mime="application/pdf"
 )
+
+# PTA presets information
+if show_pta:
+    st.markdown("---")
+    st.subheader("PTA Sensitivity Curve Parameters")
+    st.markdown("""
+    The PTA sensitivity curve uses an analytic approximation based on [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341). 
+    Preset parameters are estimates based on published data releases:
+    """)
+    
+    pta_table = """
+| PTA | N_psr | Timespan | σ_RMS | Cadence | Reference |
+|-----|-------|----------|-------|---------|-----------|
+| NANOGrav 15yr | 67 | 15 yr | 300 ns | 26/yr | [Agazie et al. (2023)](https://arxiv.org/abs/2306.16213) |
+| EPTA DR2 | 25 | 24 yr | 500 ns | 20/yr | [EPTA Collaboration (2023)](https://arxiv.org/abs/2306.16214) |
+| PPTA DR3 | 30 | 18 yr | 400 ns | 26/yr | [Zic et al. (2023)](https://arxiv.org/abs/2306.16230) |
+| MPTA | 88 | 4.5 yr | 200 ns | 26/yr | [Miles et al. (2023)](https://arxiv.org/abs/2302.12295) |
+| CPTA | 57 | 3.4 yr | 100 ns | 26/yr | [Xu et al. (2023)](https://arxiv.org/abs/2306.16216) |
+| IPTA DR3 (proj.) | ~115 | 20 yr | 200 ns | 26/yr | Estimated combined array |
+| SKA-era | 200 | 20 yr | 50 ns | 52/yr | [Shannon et al. (2025)](https://arxiv.org/abs/2512.16163) |
+"""
+    st.markdown(pta_table)
+    st.caption("Note: σ_RMS values are approximate array-averaged timing precisions. Actual arrays have heterogeneous noise properties. IPTA DR3 and SKA-era are projections.")
 
 # Info panel
 st.markdown("---")
