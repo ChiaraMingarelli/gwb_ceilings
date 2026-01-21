@@ -229,17 +229,17 @@ def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cade
     f_max = cadence / (2 * 365.25 * 24 * 3600)
     freqs = np.logspace(np.log10(f_min * 0.5), np.log10(f_max), 100)
     
-    # Independent calibrations based on published detections
+    # Independent calibrations based on published detections at FIXED gamma=13/3
     # Each array's sensitivity is set to match their detection threshold
-    # (sensitivity ~ detected amplitude for a ~3-5 sigma detection)
+    # (sensitivity ~ 0.8-0.9 × detected amplitude for a ~3-5 sigma detection)
     calibrations = {
-        # Detected signals - calibrated to each array's published amplitude
-        'NANOGrav 15yr': {'h_c_min': 2.0e-15, 'n': 67, 'T': 15.0, 'sigma': 300, 'cad': 26},
-        'EPTA DR2': {'h_c_min': 2.5e-15, 'n': 25, 'T': 24.0, 'sigma': 500, 'cad': 20},
-        'PPTA DR3': {'h_c_min': 1.8e-15, 'n': 30, 'T': 18.0, 'sigma': 400, 'cad': 26},
-        'CPTA': {'h_c_min': 4.0e-15, 'n': 57, 'T': 3.4, 'sigma': 100, 'cad': 26},
-        'MPTA': {'h_c_min': 3.5e-15, 'n': 88, 'T': 4.5, 'sigma': 200, 'cad': 26},
-        'IPTA DR3 (projected)': {'h_c_min': 8.0e-16, 'n': 115, 'T': 20.0, 'sigma': 200, 'cad': 26},
+        # Detected signals - calibrated to each array's published amplitude at gamma=13/3
+        'NANOGrav 15yr': {'h_c_min': 2.0e-15, 'n': 67, 'T': 15.0, 'sigma': 300, 'cad': 26},  # A=2.4e-15 (Agazie+ 2023)
+        'EPTA DR2': {'h_c_min': 2.1e-15, 'n': 25, 'T': 24.0, 'sigma': 500, 'cad': 20},       # A=2.5e-15 (EPTA+ 2023)
+        'PPTA DR3': {'h_c_min': 1.7e-15, 'n': 30, 'T': 18.0, 'sigma': 400, 'cad': 26},       # A=2.0e-15 (Reardon+ 2023)
+        'CPTA': {'h_c_min': 1.7e-15, 'n': 57, 'T': 3.4, 'sigma': 100, 'cad': 26},            # A=2.0e-15 (Xu+ 2023, fixed alpha)
+        'MPTA': {'h_c_min': 4.0e-15, 'n': 83, 'T': 4.5, 'sigma': 200, 'cad': 26},            # A=4.8e-15 (Miles+ 2025, fixed alpha)
+        'IPTA DR3 (proj.)': {'h_c_min': 8.0e-16, 'n': 115, 'T': 20.0, 'sigma': 200, 'cad': 26},
         'SKA-era': {'h_c_min': 7.0e-17, 'n': 200, 'T': 20.0, 'sigma': 50, 'cad': 52},
     }
     
@@ -281,6 +281,13 @@ def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cade
     omega_gw = np.minimum(omega_gw, 1e-7)
     
     return freqs, omega_gw
+
+
+def omega_to_hc(freqs, omega_gw):
+    """Convert Omega_gw to characteristic strain h_c."""
+    prefac = 2 * np.pi**2 / (3 * H0**2)
+    h_c = np.sqrt(omega_gw / (prefac * freqs**2))
+    return h_c
 
 
 # Streamlit app
@@ -337,6 +344,7 @@ rho_nsc = st.sidebar.slider(
 ) * 1e6
 
 st.sidebar.header("Display Options")
+y_axis_unit = st.sidebar.radio("Y-axis", ["Ω_gw", "h_c (characteristic strain)"], index=0, horizontal=True)
 show_detectors = st.sidebar.checkbox("Show detector curves", value=True)
 show_pta = st.sidebar.checkbox("Show PTA sensitivity", value=True)
 show_dwd = st.sidebar.checkbox("Show DWD foreground", value=True)
@@ -347,7 +355,7 @@ PTA_PRESETS = {
     'NANOGrav 15yr': {'n_pulsars': 67, 'timespan': 15.0, 'sigma_ns': 300, 'cadence': 26},
     'EPTA DR2': {'n_pulsars': 25, 'timespan': 24.0, 'sigma_ns': 500, 'cadence': 20},
     'PPTA DR3': {'n_pulsars': 30, 'timespan': 18.0, 'sigma_ns': 400, 'cadence': 26},
-    'MPTA': {'n_pulsars': 88, 'timespan': 4.5, 'sigma_ns': 200, 'cadence': 26},
+    'MPTA': {'n_pulsars': 83, 'timespan': 4.5, 'sigma_ns': 200, 'cadence': 26},
     'CPTA': {'n_pulsars': 57, 'timespan': 3.4, 'sigma_ns': 100, 'cadence': 26},
     'IPTA DR3 (proj.)': {'n_pulsars': 115, 'timespan': 20.0, 'sigma_ns': 200, 'cadence': 26},
     'SKA-era': {'n_pulsars': 200, 'timespan': 20.0, 'sigma_ns': 50, 'cadence': 52},
@@ -388,12 +396,19 @@ fig.patch.set_facecolor('white')
 f_grid = np.logspace(-9.5, 3.5, 3000)
 omega_cutoff = 1e-7
 
+# Set axis based on y-axis unit choice
+use_hc = (y_axis_unit == "h_c (characteristic strain)")
+
 ax.set_xlim(1e-9, 3e3)
-ax.set_ylim(1e-18, 1e-6)
+if use_hc:
+    ax.set_ylim(1e-26, 1e-12)
+    ax.set_ylabel(r'Characteristic Strain $h_c(f)$', fontsize=14)
+else:
+    ax.set_ylim(1e-18, 1e-6)
+    ax.set_ylabel(r'$\Omega_{\mathrm{gw}}(f)$', fontsize=14)
 ax.set_xscale('log')
 ax.set_yscale('log')
 ax.set_xlabel('Frequency f [Hz]', fontsize=14)
-ax.set_ylabel(r'$\Omega_{\mathrm{gw}}(f)$', fontsize=14)
 
 ax.xaxis.set_major_locator(LogLocator(base=10, numticks=20))
 ax.yaxis.set_major_locator(LogLocator(base=10, numticks=20))
@@ -404,28 +419,33 @@ ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numt
 if show_detectors:
     muares = get_muares_sensitivity(f_grid, T_yrs=10.0)
     mask_mu = (f_grid > 1e-7) & (f_grid < 1e-1) & (muares < omega_cutoff)
-    ax.loglog(f_grid[mask_mu], muares[mask_mu], color='gray', ls='-.', alpha=0.6, lw=1.2)
-    ax.text(1e-6, 1e-11, 'muAres', fontsize=10, color='gray', ha='left')
+    plot_mu = omega_to_hc(f_grid, muares) if use_hc else muares
+    ax.loglog(f_grid[mask_mu], plot_mu[mask_mu], color='gray', ls='-.', alpha=0.6, lw=1.2)
+    ax.text(1e-6, omega_to_hc(np.array([1e-6]), np.array([1e-11]))[0] if use_hc else 1e-11, 'μAres', fontsize=10, color='gray', ha='left')
 
     bbo = get_bbo_approx(f_grid)
     mask_bbo = (bbo > 0) & (bbo < omega_cutoff)
-    ax.loglog(f_grid[mask_bbo], bbo[mask_bbo], color='gray', ls='-', alpha=0.6, lw=1.2)
-    ax.text(5e-2, 2e-17, 'BBO', fontsize=10, color='gray', ha='center')
+    plot_bbo = omega_to_hc(f_grid, bbo) if use_hc else bbo
+    ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color='gray', ls='-', alpha=0.6, lw=1.2)
+    ax.text(5e-2, omega_to_hc(np.array([5e-2]), np.array([2e-17]))[0] if use_hc else 2e-17, 'BBO', fontsize=10, color='gray', ha='center')
 
     lisa = get_lisa_sensitivity(f_grid)
     mask_lisa = lisa < omega_cutoff
-    ax.loglog(f_grid[mask_lisa], lisa[mask_lisa], color='gray', ls='--', alpha=0.6, lw=1.5)
-    ax.text(2e-5, 8e-10, 'LISA', fontsize=10, color='gray', ha='center')
+    plot_lisa = omega_to_hc(f_grid, lisa) if use_hc else lisa
+    ax.loglog(f_grid[mask_lisa], plot_lisa[mask_lisa], color='gray', ls='--', alpha=0.6, lw=1.5)
+    ax.text(2e-5, omega_to_hc(np.array([2e-5]), np.array([8e-10]))[0] if use_hc else 8e-10, 'LISA', fontsize=10, color='gray', ha='center')
 
     aligo = get_aligo_approx(f_grid)
     mask_aligo = (aligo < 1e-4) & (aligo < omega_cutoff)
-    ax.loglog(f_grid[mask_aligo], aligo[mask_aligo], color='gray', ls=':', alpha=0.6, lw=1.2)
-    ax.text(70 * 10 * 10**(-0.4), 2e-9 * 10**0.5, 'aLIGO', fontsize=10, color='gray', ha='center')
+    plot_aligo = omega_to_hc(f_grid, aligo) if use_hc else aligo
+    ax.loglog(f_grid[mask_aligo], plot_aligo[mask_aligo], color='gray', ls=':', alpha=0.6, lw=1.2)
+    ax.text(70 * 10 * 10**(-0.4), omega_to_hc(np.array([700]), np.array([2e-9 * 10**0.5]))[0] if use_hc else 2e-9 * 10**0.5, 'aLIGO', fontsize=10, color='gray', ha='center')
 
     ce = get_ce_sensitivity(f_grid, T_yrs=1.0)
     mask_ce = (ce < 1e-4) & (ce < omega_cutoff)
-    ax.loglog(f_grid[mask_ce], ce[mask_ce], color='gray', ls=':', alpha=0.6, lw=1.2)
-    ax.text(100, 1e-14, 'CE', fontsize=10, color='gray', ha='center')
+    plot_ce = omega_to_hc(f_grid, ce) if use_hc else ce
+    ax.loglog(f_grid[mask_ce], plot_ce[mask_ce], color='gray', ls=':', alpha=0.6, lw=1.2)
+    ax.text(100, omega_to_hc(np.array([100]), np.array([1e-14]))[0] if use_hc else 1e-14, 'CE', fontsize=10, color='gray', ha='center')
 
 # PTA sensitivity (analytic approximation)
 if show_pta:
@@ -439,24 +459,41 @@ if show_pta:
     # Less restrictive mask - show curve even if above ceiling
     mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
     if np.any(mask_pta):
-        ax.loglog(pta_freqs[mask_pta], pta_omega[mask_pta], 
+        plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
+        ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
                  color='purple', ls='--', alpha=0.8, lw=1.5)
         # Position label near the curve minimum - show preset name
         label_text = pta_preset.replace(' (projected)', '').replace('yr', '')
-        ax.text(5e-8, 5e-10, label_text, fontsize=9, color='purple', ha='center')
+        label_y = omega_to_hc(np.array([5e-8]), np.array([5e-10]))[0] if use_hc else 5e-10
+        ax.text(5e-8, label_y, label_text, fontsize=9, color='purple', ha='center')
 
 # DWD foreground
 if show_dwd:
     omega_wd = get_dwd_foreground(f_grid)
     mask_wd = omega_wd > 1e-25
     if np.any(mask_wd):
-        ax.fill_between(f_grid[mask_wd], 1e-25, omega_wd[mask_wd], color='gray', alpha=0.3, linewidth=0)
-        ax.text(3e-3 / 10 * 10**0.4, 1e-12, 'DWD', fontsize=15, color='white', ha='center', fontweight='bold')
+        if use_hc:
+            hc_wd = omega_to_hc(f_grid, omega_wd)
+            ax.fill_between(f_grid[mask_wd], 1e-26, hc_wd[mask_wd], color='gray', alpha=0.3, linewidth=0)
+            ax.text(3e-3 / 10 * 10**0.4, 1e-19, 'DWD', fontsize=15, color='gray', ha='center', fontweight='bold')
+        else:
+            ax.fill_between(f_grid[mask_wd], 1e-25, omega_wd[mask_wd], color='gray', alpha=0.3, linewidth=0)
+            ax.text(3e-3 / 10 * 10**0.4, 1e-12, 'DWD', fontsize=15, color='white', ha='center', fontweight='bold')
 
 # Ceiling
 if show_ceiling:
-    ax.axhline(y=1e-7, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-    ax.text(1e-3, 1.8e-7, 'Integrated Astrophysical Ceiling', color='red', fontsize=18, fontweight='bold', ha='center')
+    if use_hc:
+        # In h_c space, the ceiling is frequency-dependent: h_c = sqrt(Omega / (prefac * f^2))
+        # At f=1e-8 Hz, Omega=1e-7 -> h_c ~ 3e-14
+        # At f=1 Hz, Omega=1e-7 -> h_c ~ 3e-22
+        # Draw a line showing where Omega = 1e-7 in h_c space
+        f_ceil = np.logspace(-9, 3, 100)
+        hc_ceil = omega_to_hc(f_ceil, np.full_like(f_ceil, 1e-7))
+        ax.loglog(f_ceil, hc_ceil, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
+        ax.text(1e-3, omega_to_hc(np.array([1e-3]), np.array([2e-7]))[0], 'Integrated Ceiling', color='red', fontsize=14, fontweight='bold', ha='center')
+    else:
+        ax.axhline(y=1e-7, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
+        ax.text(1e-3, 1.8e-7, 'Integrated Astrophysical Ceiling', color='red', fontsize=18, fontweight='bold', ha='center')
 
 # Populations
 for name in selected_pops:
@@ -465,9 +502,17 @@ for name in selected_pops:
     omega = get_omega_gw(f_grid, A_current, params['f_ref'], params['f_min'], params['f_max'])
     valid = omega > 1e-30
     if np.any(valid):
-        ax.loglog(f_grid[valid], omega[valid], color=params['color'], lw=2.5, alpha=1.0)
-        ax.fill_between(f_grid[valid], 1e-25, omega[valid], color=params['color'], alpha=0.15, linewidth=0)
+        if use_hc:
+            hc_pop = omega_to_hc(f_grid, omega)
+            ax.loglog(f_grid[valid], hc_pop[valid], color=params['color'], lw=2.5, alpha=1.0)
+            ax.fill_between(f_grid[valid], 1e-26, hc_pop[valid], color=params['color'], alpha=0.15, linewidth=0)
+        else:
+            ax.loglog(f_grid[valid], omega[valid], color=params['color'], lw=2.5, alpha=1.0)
+            ax.fill_between(f_grid[valid], 1e-25, omega[valid], color=params['color'], alpha=0.15, linewidth=0)
         lx, ly = labels_pos.get(name, (1e-4, 1e-15))
+        # Convert label y position if using h_c
+        if use_hc:
+            ly = omega_to_hc(np.array([lx]), np.array([ly]))[0]
         display_name = display_names.get(name, name)
         ha = 'right' if name == 'EMRI' else ('left' if name == 'IMBH-SMBH' else 'center')
         va = 'bottom' if name == 'EMRI' else 'center'
@@ -498,31 +543,30 @@ if show_pta:
     st.markdown("---")
     st.subheader("PTA Sensitivity Curve Parameters")
     st.markdown("""
-    Each PTA's sensitivity curve is **independently calibrated** to its own published detection amplitude, 
-    not scaled from NANOGrav. Arrays with published GWB detections use their reported strain amplitudes 
+    PTAs with published GWB evidence use their reported strain amplitudes 
     to set the sensitivity floor. Projections (IPTA DR3, SKA-era) are scaled from similar existing arrays.
     """)
     
     pta_table = """
-| PTA | N_psr | Timespan | σ_RMS | Cadence | Detected A | Reference |
+| PTA | N_psr | Timespan | σ_RMS | Cadence | A (γ=13/3) | Reference |
 |-----|-------|----------|-------|---------|------------|-----------|
 | NANOGrav 15yr | 67 | 15 yr | 300 ns | 26/yr | 2.4×10⁻¹⁵ | [Agazie et al. (2023)](https://arxiv.org/abs/2306.16213) |
-| EPTA DR2 | 25 | 24 yr | 500 ns | 20/yr | 2.95×10⁻¹⁵ | [EPTA Collab. (2023)](https://arxiv.org/abs/2306.16214) |
+| EPTA DR2 | 25 | 24 yr | 500 ns | 20/yr | 2.5×10⁻¹⁵ | [EPTA Collab. (2023)](https://arxiv.org/abs/2306.16214) |
 | PPTA DR3 | 30 | 18 yr | 400 ns | 26/yr | 2.0×10⁻¹⁵ | [Reardon et al. (2023)](https://arxiv.org/abs/2306.16215) |
-| CPTA | 57 | 3.4 yr | 100 ns | 26/yr | 4.6×10⁻¹⁵ | [Xu et al. (2023)](https://arxiv.org/abs/2306.16216) |
-| MPTA | 88 | 4.5 yr | 200 ns | 26/yr | — | [Miles et al. (2023)](https://arxiv.org/abs/2302.12295) |
+| CPTA | 57 | 3.4 yr | 100 ns | 26/yr | 2.0×10⁻¹⁵ | [Xu et al. (2023)](https://arxiv.org/abs/2306.16216) |
+| MPTA | 83 | 4.5 yr | 200 ns | 26/yr | 4.8×10⁻¹⁵ | [Miles et al. (2025)](https://arxiv.org/abs/2412.01153) |
 | IPTA DR3 (proj.) | ~115 | 20 yr | 200 ns | 26/yr | — | Projected ~2.5× improvement |
 | SKA-era | 200 | 20 yr | 50 ns | 52/yr | — | [Shannon et al. (2025)](https://arxiv.org/abs/2512.16163) |
 """
     st.markdown(pta_table)
-    st.caption("Note: Each PTA's sensitivity is calibrated to its own detected amplitude where available. σ_RMS values are approximate array-averaged timing precisions. IPTA DR3 and SKA-era are projections.")
+    st.caption("Note: All amplitudes A are at **fixed γ=13/3** (α=-2/3). Each PTA's sensitivity is calibrated to its published GWB amplitude. σ_RMS values are approximate array-averaged timing precisions. IPTA DR3 and SKA-era are projections.")
 
     # Add tension note
     st.markdown("---")
-    st.subheader("⚠️ SMBHB Ceiling Tension")
+    st.subheader("SMBHB Ceiling Tension")
     st.markdown("""
-    **Key result from Mingarelli (2026):** The NANOGrav 15yr measured amplitude (A = 2.4×10⁻¹⁵) 
-    **exceeds** the SMBHB energetic ceiling (A ≤ 1.0×10⁻¹⁵) at 2.3σ significance.
+    **Important result from Mingarelli (2026):** All PTA-measured GWB amplitudes
+    **exceed** the SMBHB energetic ceiling (A ≤ 1.0×10⁻¹⁵).
     
     The SMBHB ceiling (cyan curve) is *not* a sensitivity limit—it is the **maximum amplitude** 
     that SMBHBs can produce given the available mass budget from the Kormendy & Ho (2013) scaling relations.
@@ -530,7 +574,7 @@ if show_pta:
     This tension suggests one or more of:
     1. Unmodeled pulsar noise contaminating the GWB measurement
     2. Underestimated SMBH demographics (high-mass tail, intrinsic scatter)
-    3. Contributions from other astrophysical or exotic sources
+    3. Contributions from exotic physics.
     """)
 
 # Info panel
