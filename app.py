@@ -78,14 +78,42 @@ POPULATIONS = {
     },
 }
 
-# Tuned label positions
-labels_pos = {
+# Tuned label positions for Omega_gw mode
+labels_pos_omega = {
     'SMBHB': (1e-8, 1e-11),
     'IMBH-SMBH': (4.4e-2, 1e-9),
     'EMRI': (1e-5, 1e-10 * 10**0.1),
     'Pop III': (0.1 * 10**0.3, 5e-14 * 10**(-0.6)),
     'BNS': (1e-1 * 10**0.2, 1e-11 * 10**(-0.5)),
     'Stellar BBH': (10 * 10**0.3, 3e-15)
+}
+
+# Tuned label positions for h_c mode
+labels_pos_hc = {
+    'SMBHB': (1e-8, 3e-15),
+    'IMBH-SMBH': (1e-2, 3e-21),
+    'EMRI': (3e-4, 1e-20),
+    'Pop III': (0.3, 3e-25),
+    'BNS': (0.3, 1e-24),
+    'Stellar BBH': (30, 3e-25)
+}
+
+# Detector label positions for Omega_gw mode
+detector_labels_omega = {
+    'μAres': (1e-6, 1e-11),
+    'BBO': (5e-2, 2e-17),
+    'LISA': (2e-5, 8e-10),
+    'aLIGO': (280, 6e-9),
+    'CE': (100, 1e-14),
+}
+
+# Detector label positions for h_c mode
+detector_labels_hc = {
+    'μAres': (1e-6, 5e-19),
+    'BBO': (5e-2, 3e-25),
+    'LISA': (2e-5, 3e-17),
+    'aLIGO': (280, 5e-22),
+    'CE': (100, 5e-25),
 }
 
 display_names = {
@@ -426,35 +454,43 @@ ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numt
 
 # Detectors
 if show_detectors:
+    # Select label positions based on display mode
+    det_labels = detector_labels_hc if use_hc else detector_labels_omega
+    
     muares = get_muares_sensitivity(f_grid, T_yrs=10.0)
     mask_mu = (f_grid > 1e-7) & (f_grid < 1e-1) & (muares < omega_cutoff)
     plot_mu = omega_to_hc(f_grid, muares) if use_hc else muares
     ax.loglog(f_grid[mask_mu], plot_mu[mask_mu], color='gray', ls='-.', alpha=0.6, lw=1.2)
-    ax.text(1e-6, omega_to_hc(np.array([1e-6]), np.array([1e-11]))[0] if use_hc else 1e-11, 'μAres', fontsize=10, color='gray', ha='left')
+    lx, ly = det_labels['μAres']
+    ax.text(lx, ly, 'μAres', fontsize=10, color='gray', ha='left')
 
     bbo = get_bbo_approx(f_grid)
     mask_bbo = (bbo > 0) & (bbo < omega_cutoff)
     plot_bbo = omega_to_hc(f_grid, bbo) if use_hc else bbo
     ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color='gray', ls='--', alpha=0.6, lw=1.2)
-    ax.text(5e-2, omega_to_hc(np.array([5e-2]), np.array([2e-17]))[0] if use_hc else 2e-17, 'BBO', fontsize=10, color='gray', ha='center')
+    lx, ly = det_labels['BBO']
+    ax.text(lx, ly, 'BBO', fontsize=10, color='gray', ha='center')
 
     lisa = get_lisa_sensitivity(f_grid)
     mask_lisa = lisa < omega_cutoff
     plot_lisa = omega_to_hc(f_grid, lisa) if use_hc else lisa
     ax.loglog(f_grid[mask_lisa], plot_lisa[mask_lisa], color='gray', ls='--', alpha=0.6, lw=1.5)
-    ax.text(2e-5, omega_to_hc(np.array([2e-5]), np.array([8e-10]))[0] if use_hc else 8e-10, 'LISA', fontsize=10, color='gray', ha='center')
+    lx, ly = det_labels['LISA']
+    ax.text(lx, ly, 'LISA', fontsize=10, color='gray', ha='center')
 
     aligo = get_aligo_approx(f_grid)
     mask_aligo = (aligo < 1e-4) & (aligo < omega_cutoff)
     plot_aligo = omega_to_hc(f_grid, aligo) if use_hc else aligo
     ax.loglog(f_grid[mask_aligo], plot_aligo[mask_aligo], color='gray', ls=':', alpha=0.6, lw=1.2)
-    ax.text(70 * 10 * 10**(-0.4), omega_to_hc(np.array([700]), np.array([2e-9 * 10**0.5]))[0] if use_hc else 2e-9 * 10**0.5, 'aLIGO', fontsize=10, color='gray', ha='center')
+    lx, ly = det_labels['aLIGO']
+    ax.text(lx, ly, 'aLIGO', fontsize=10, color='gray', ha='center')
 
     ce = get_ce_sensitivity(f_grid, T_yrs=1.0)
     mask_ce = (ce < 1e-4) & (ce < omega_cutoff)
     plot_ce = omega_to_hc(f_grid, ce) if use_hc else ce
     ax.loglog(f_grid[mask_ce], plot_ce[mask_ce], color='gray', ls=':', alpha=0.6, lw=1.2)
-    ax.text(100, omega_to_hc(np.array([100]), np.array([1e-14]))[0] if use_hc else 1e-14, 'CE', fontsize=10, color='gray', ha='center')
+    lx, ly = det_labels['CE']
+    ax.text(lx, ly, 'CE', fontsize=10, color='gray', ha='center')
 
 # PTA sensitivity curves - part of detector curves
 if show_detectors:
@@ -521,27 +557,27 @@ if show_dwd:
         if use_hc:
             hc_wd = omega_to_hc(f_grid, omega_wd)
             ax.fill_between(f_grid[mask_wd], 1e-26, hc_wd[mask_wd], color='gray', alpha=0.3, linewidth=0)
-            ax.text(3e-3 / 10 * 10**0.4, 1e-19, 'DWD', fontsize=15, color='gray', ha='center', fontweight='bold')
+            ax.text(7e-4, 3e-19, 'DWD', fontsize=15, color='gray', ha='center', fontweight='bold')
         else:
             ax.fill_between(f_grid[mask_wd], 1e-25, omega_wd[mask_wd], color='gray', alpha=0.3, linewidth=0)
-            ax.text(3e-3 / 10 * 10**0.4, 1e-12, 'DWD', fontsize=15, color='white', ha='center', fontweight='bold')
+            ax.text(7e-4, 1e-11, 'DWD', fontsize=15, color='gray', ha='center', fontweight='bold')
 
 # Ceiling
 if show_ceiling:
     if use_hc:
         # In h_c space, the ceiling is frequency-dependent: h_c = sqrt(Omega / (prefac * f^2))
-        # At f=1e-8 Hz, Omega=1e-7 -> h_c ~ 3e-14
-        # At f=1 Hz, Omega=1e-7 -> h_c ~ 3e-22
-        # Draw a line showing where Omega = 1e-7 in h_c space
         f_ceil = np.logspace(-9, 3, 100)
         hc_ceil = omega_to_hc(f_ceil, np.full_like(f_ceil, 1e-7))
         ax.loglog(f_ceil, hc_ceil, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-        ax.text(1e-3, omega_to_hc(np.array([1e-3]), np.array([2e-7]))[0], 'Integrated Ceiling', color='red', fontsize=14, fontweight='bold', ha='center')
+        ax.text(1e-3, 5e-18, 'Integrated Ceiling', color='red', fontsize=14, fontweight='bold', ha='center')
     else:
         ax.axhline(y=1e-7, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-        ax.text(1e-3, 1.8e-7, 'Integrated Astrophysical Ceiling', color='red', fontsize=18, fontweight='bold', ha='center')
+        ax.text(1e-3, 1.8e-7, 'Integrated Ceiling', color='red', fontsize=14, fontweight='bold', ha='center')
 
 # Populations
+# Select label positions based on display mode
+pop_labels = labels_pos_hc if use_hc else labels_pos_omega
+
 for name in selected_pops:
     params = POPULATIONS[name]
     A_current = scale_amplitude(params['A_bench'], params['reservoir'], rho_smbh, rho_stellar, rho_nsc)
@@ -555,10 +591,7 @@ for name in selected_pops:
         else:
             ax.loglog(f_grid[valid], omega[valid], color=params['color'], lw=2.5, alpha=1.0)
             ax.fill_between(f_grid[valid], 1e-25, omega[valid], color=params['color'], alpha=0.15, linewidth=0)
-        lx, ly = labels_pos.get(name, (1e-4, 1e-15))
-        # Convert label y position if using h_c
-        if use_hc:
-            ly = omega_to_hc(np.array([lx]), np.array([ly]))[0]
+        lx, ly = pop_labels.get(name, (1e-4, 1e-15))
         display_name = display_names.get(name, name)
         ha = 'right' if name == 'EMRI' else ('left' if name == 'IMBH-SMBH' else 'center')
         va = 'bottom' if name == 'EMRI' else 'center'
