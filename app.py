@@ -4,6 +4,18 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import LogLocator
 import io
 
+# =============================================================================
+# Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds
+# 
+# Interactive visualization tool for GWB ceiling constraints
+#
+# Author: Chiara Mingarelli (Yale University)
+# Code development assisted by Claude (Anthropic)
+#
+# Reference: Mingarelli (2026), "Energetic Ceilings on Astrophysical 
+#            Gravitational-Wave Backgrounds"
+# =============================================================================
+
 # Physical Constants
 H0_km_s_Mpc = 67.4
 H0 = H0_km_s_Mpc * 1000.0 / 3.08567758e22
@@ -383,9 +395,17 @@ st.sidebar.header("Display Options")
 # Y-axis toggle temporarily disabled - always use Omega_gw
 # y_axis_unit = st.sidebar.radio("Y-axis", ["Ω_gw", "h_c (characteristic strain)"], index=0, horizontal=True)
 y_axis_unit = "Ω_gw"  # Fixed to Omega_gw for now
-show_detectors = st.sidebar.checkbox("Show detector curves", value=True)
 show_dwd = st.sidebar.checkbox("Show DWD foreground", value=True)
 show_ceiling = st.sidebar.checkbox("Show integrated ceiling", value=True)
+
+# Individual detector toggles
+with st.sidebar.expander("Detectors", expanded=True):
+    show_lisa = st.checkbox("LISA", value=True)
+    show_muares = st.checkbox("μAres", value=True)
+    show_bbo = st.checkbox("BBO", value=True)
+    show_aligo = st.checkbox("aLIGO", value=True)
+    show_ce = st.checkbox("Cosmic Explorer", value=True)
+    show_ptas = st.checkbox("PTA sensitivity curves", value=True)
 
 # Observation time sliders for space-based detectors
 with st.sidebar.expander("Detector Observation Times", expanded=False):
@@ -463,11 +483,10 @@ ax.yaxis.set_major_locator(LogLocator(base=10, numticks=20))
 ax.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 
-# Detectors
-if show_detectors:
-    # Select label positions based on display mode
-    det_labels = detector_labels_hc if use_hc else detector_labels_omega
-    
+# Detectors - individual toggles
+det_labels = detector_labels_hc if use_hc else detector_labels_omega
+
+if show_muares:
     muares = get_muares_sensitivity(f_grid, T_yrs=float(muares_obs_years))
     mask_mu = (f_grid > 1e-7) & (f_grid < 1e-1) & (muares < omega_cutoff)
     plot_mu = omega_to_hc(f_grid, muares) if use_hc else muares
@@ -475,6 +494,7 @@ if show_detectors:
     lx, ly = det_labels['μAres']
     ax.text(lx, ly, f'μAres ({muares_obs_years}yr)', fontsize=10, color='gray', ha='left')
 
+if show_bbo:
     bbo = get_bbo_approx(f_grid, T_yrs=float(bbo_obs_years))
     mask_bbo = (bbo > 0) & (bbo < omega_cutoff)
     plot_bbo = omega_to_hc(f_grid, bbo) if use_hc else bbo
@@ -482,6 +502,7 @@ if show_detectors:
     lx, ly = det_labels['BBO']
     ax.text(lx, ly, f'BBO ({bbo_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
+if show_lisa:
     lisa = get_lisa_sensitivity(f_grid, T_yrs=float(lisa_obs_years))
     mask_lisa = lisa < omega_cutoff
     plot_lisa = omega_to_hc(f_grid, lisa) if use_hc else lisa
@@ -489,6 +510,7 @@ if show_detectors:
     lx, ly = det_labels['LISA']
     ax.text(lx, ly, f'LISA ({lisa_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
+if show_aligo:
     aligo = get_aligo_approx(f_grid)
     mask_aligo = (aligo < 1e-4) & (aligo < omega_cutoff)
     plot_aligo = omega_to_hc(f_grid, aligo) if use_hc else aligo
@@ -496,6 +518,7 @@ if show_detectors:
     lx, ly = det_labels['aLIGO']
     ax.text(lx, ly, 'aLIGO', fontsize=10, color='gray', ha='center')
 
+if show_ce:
     ce = get_ce_sensitivity(f_grid, T_yrs=1.0)
     mask_ce = (ce < 1e-4) & (ce < omega_cutoff)
     plot_ce = omega_to_hc(f_grid, ce) if use_hc else ce
@@ -503,8 +526,8 @@ if show_detectors:
     lx, ly = det_labels['CE']
     ax.text(lx, ly, 'CE', fontsize=10, color='gray', ha='center')
 
-# PTA sensitivity curves - part of detector curves
-if show_detectors:
+# PTA sensitivity curves
+if show_ptas:
     # Distinct colors and line styles for each PTA (all broken lines)
     pta_styles = {
         'NANOGrav 15yr': {'color': '#E41A1C', 'ls': '--'},     # red, dashed
@@ -591,10 +614,10 @@ if show_ceiling:
         f_ceil = np.logspace(-9, 3, 100)
         hc_ceil = omega_to_hc(f_ceil, np.full_like(f_ceil, 1e-7))
         ax.loglog(f_ceil, hc_ceil, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-        ax.text(1e-1, 3e-17, 'Integrated Ceiling', color='red', fontsize=12, fontweight='bold', ha='center')
+        ax.text(1e-1, 3e-17, 'Integrated Astrophysical Ceiling', color='red', fontsize=12, fontweight='bold', ha='center')
     else:
         ax.axhline(y=1e-7, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-        ax.text(1e-3, 1.8e-7, 'Integrated Ceiling', color='red', fontsize=14, fontweight='bold', ha='center')
+        ax.text(1e-3, 1.8e-7, 'Integrated Astrophysical Ceiling', color='red', fontsize=14, fontweight='bold', ha='center')
 
 # Populations
 # Select label positions based on display mode
@@ -714,7 +737,7 @@ The remaining mild tension could indicate:
 # =============================================================================
 # PTA SECTION (moved to bottom)
 # =============================================================================
-if show_detectors and (len(pta_presets) > 0 or show_custom_pta):
+if show_ptas and (len(pta_presets) > 0 or show_custom_pta):
     st.markdown("---")
     st.subheader("PTA Sensitivity Curves")
     st.markdown("""
