@@ -189,7 +189,7 @@ def get_aligo_approx(f):
     return omega
 
 
-def get_bbo_approx(f):
+def get_bbo_approx(f, T_yrs=5.0):
     """BBO approximate sensitivity in Omega_gw."""
     mask = (f > 1e-3) & (f < 100)
     L_bbo = 5.0e7
@@ -200,7 +200,7 @@ def get_bbo_approx(f):
         return np.zeros_like(f)
     x = fm / f_star
     Sx = (4.0 * S_pos / L_bbo**2) * (1 + np.cos(x)**2) + (16.0 * S_acc / (L_bbo**2 * (2*np.pi*fm)**4)) * (1 + np.cos(x)**2)
-    T_obs = 5.0 * 3.15e7
+    T_obs = T_yrs * 365.25 * 24 * 3600
     omega = np.zeros_like(f)
     omega[mask] = (2 * np.pi**2 / (3 * H0**2)) * fm**3 * np.sqrt(Sx**2 / (2 * T_obs))
     return omega
@@ -387,6 +387,12 @@ show_detectors = st.sidebar.checkbox("Show detector curves", value=True)
 show_dwd = st.sidebar.checkbox("Show DWD foreground", value=True)
 show_ceiling = st.sidebar.checkbox("Show integrated ceiling", value=True)
 
+# Observation time sliders for space-based detectors
+with st.sidebar.expander("Detector Observation Times", expanded=False):
+    lisa_obs_years = st.slider("LISA (years)", min_value=1, max_value=10, value=4, step=1)
+    muares_obs_years = st.slider("μAres (years)", min_value=1, max_value=10, value=10, step=1)
+    bbo_obs_years = st.slider("BBO (years)", min_value=1, max_value=10, value=5, step=1)
+
 # PTA presets
 PTA_PRESETS = {
     'NANOGrav 15yr': {'n_pulsars': 67, 'timespan': 15.0, 'sigma_ns': 300, 'cadence': 26},
@@ -462,26 +468,26 @@ if show_detectors:
     # Select label positions based on display mode
     det_labels = detector_labels_hc if use_hc else detector_labels_omega
     
-    muares = get_muares_sensitivity(f_grid, T_yrs=10.0)
+    muares = get_muares_sensitivity(f_grid, T_yrs=float(muares_obs_years))
     mask_mu = (f_grid > 1e-7) & (f_grid < 1e-1) & (muares < omega_cutoff)
     plot_mu = omega_to_hc(f_grid, muares) if use_hc else muares
     ax.loglog(f_grid[mask_mu], plot_mu[mask_mu], color='gray', ls='-.', alpha=0.6, lw=1.2)
     lx, ly = det_labels['μAres']
-    ax.text(lx, ly, 'μAres', fontsize=10, color='gray', ha='left')
+    ax.text(lx, ly, f'μAres ({muares_obs_years}yr)', fontsize=10, color='gray', ha='left')
 
-    bbo = get_bbo_approx(f_grid)
+    bbo = get_bbo_approx(f_grid, T_yrs=float(bbo_obs_years))
     mask_bbo = (bbo > 0) & (bbo < omega_cutoff)
     plot_bbo = omega_to_hc(f_grid, bbo) if use_hc else bbo
     ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color='gray', ls='--', alpha=0.6, lw=1.2)
     lx, ly = det_labels['BBO']
-    ax.text(lx, ly, 'BBO', fontsize=10, color='gray', ha='center')
+    ax.text(lx, ly, f'BBO ({bbo_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
-    lisa = get_lisa_sensitivity(f_grid)
+    lisa = get_lisa_sensitivity(f_grid, T_yrs=float(lisa_obs_years))
     mask_lisa = lisa < omega_cutoff
     plot_lisa = omega_to_hc(f_grid, lisa) if use_hc else lisa
     ax.loglog(f_grid[mask_lisa], plot_lisa[mask_lisa], color='gray', ls='--', alpha=0.6, lw=1.5)
     lx, ly = det_labels['LISA']
-    ax.text(lx, ly, 'LISA', fontsize=10, color='gray', ha='center')
+    ax.text(lx, ly, f'LISA ({lisa_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
     aligo = get_aligo_approx(f_grid)
     mask_aligo = (aligo < 1e-4) & (aligo < omega_cutoff)
@@ -686,14 +692,11 @@ for i, name in enumerate(selected_pops):
 st.markdown("---")
 st.subheader("SMBHB Ceiling vs PTA Measurements")
 st.markdown("""
-**Updated result with Liepold & Ma (2024) SMBH density:**
+**Energetic ceiling with Liepold & Ma (2024) SMBH density:**
 
 Using ρ_SMBH = (1.8 ± 0.7) × 10⁶ M☉/Mpc³ from Liepold & Ma (2024), the SMBHB energetic ceiling is:
 
 **A_ceiling = (1.6 ± 0.3) × 10⁻¹⁵** at f_ref = 1 yr⁻¹
-
-This is ~60% higher than estimates based on Kormendy & Ho (2013) demographics, 
-significantly reducing the tension with PTA measurements:
 
 | PTA | A (×10⁻¹⁵) | Tension with ceiling |
 |-----|------------|---------------------|
