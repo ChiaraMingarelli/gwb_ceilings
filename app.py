@@ -745,7 +745,7 @@ Using ρ_SMBH = (1.8 ± 0.7) × 10⁶ M☉/Mpc³ from Liepold & Ma (2024), the S
 | EPTA DR2 | 2.5 ± 0.7 | ~1.2σ |
 | MPTA | 4.8 +0.8/-0.9 | ~3.4σ |
 
-The primary way to reconcile the measured GWB amplitudes with the energetic ceiling is **mis-modeled pulsar noise**, which can bias the inferred amplitude high (see Goncharov et al. 2025). Other effects — such as intrinsic scatter in SMBH-galaxy scaling relations, contributions from the high-mass tail of the SMBH mass function, or cosmic variance from nearby massive binaries — would have more limited impact.
+The primary way to reconcile the measured GWB amplitudes with the energetic ceiling is **mis-modeled pulsar noise**, which can bias the inferred amplitude high (see Goncharov et al. 2025). Other effects include, but are not limited to, intrinsic scatter in SMBH-galaxy scaling relations, contributions from the high-mass tail of the SMBH mass function, cosmic variance from nearby massive binaries, and contributions from exotic physics.
 """)
 
 # =============================================================================
