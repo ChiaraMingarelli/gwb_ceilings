@@ -21,6 +21,9 @@ H0_km_s_Mpc = 67.4
 H0 = H0_km_s_Mpc * 1000.0 / 3.08567758e22
 h = H0_km_s_Mpc / 100.0
 
+# Pre-compute frequency grid (reduced from 3000 to 1000 points for speed)
+F_GRID = np.logspace(-9.5, 3.5, 1000)
+
 # Fiducial reservoir densities (Msun/Mpc^3)
 # SMBH density updated to Liepold & Ma (2024) value
 RHO_SMBH_FID = 1.8e6  # Liepold & Ma (2024), ApJL 971, L29
@@ -115,7 +118,7 @@ labels_pos_hc = {
 
 # Detector label positions for Omega_gw mode
 detector_labels_omega = {
-    'μAres': (1e-6, 1e-11),
+    'muAres': (1e-6, 1e-11),
     'BBO': (5e-2, 2e-17),
     'LISA': (2e-5, 8e-10),
     'aLIGO': (280, 6e-9),
@@ -124,7 +127,7 @@ detector_labels_omega = {
 
 # Detector label positions for h_c mode
 detector_labels_hc = {
-    'μAres': (3e-5, 1e-17),
+    'muAres': (3e-5, 1e-17),
     'BBO': (3, 1e-24),
     'LISA': (5e-4, 1e-17),
     'aLIGO': (50, 3e-22),
@@ -154,8 +157,10 @@ def get_omega_gw(f, A, f_ref, f_min, f_max):
     return omega
 
 
-def get_lisa_sensitivity(f, T_yrs=10.0):
+@st.cache_data
+def get_lisa_sensitivity(f_tuple, T_yrs=10.0):
     """LISA sensitivity curve in Omega_gw."""
+    f = np.array(f_tuple)
     L = 2.5e9
     f_star = 19.09e-3
     P_oms = (1.5e-11)**2 * (1 + (2e-3/f)**4)
@@ -166,8 +171,10 @@ def get_lisa_sensitivity(f, T_yrs=10.0):
     return omega_n / np.sqrt(T_sec * f)
 
 
-def get_muares_sensitivity(f, T_yrs=10.0):
+@st.cache_data
+def get_muares_sensitivity(f_tuple, T_yrs=10.0):
     """mu-Ares sensitivity curve in Omega_gw."""
+    f = np.array(f_tuple)
     L = 3.95e11
     f_star = 3e8 / (2 * np.pi * L)
     S_pos = 1e-24
@@ -178,8 +185,10 @@ def get_muares_sensitivity(f, T_yrs=10.0):
     return omega_n / np.sqrt(T_sec * f)
 
 
-def get_ce_sensitivity(f, T_yrs=1.0):
+@st.cache_data
+def get_ce_sensitivity(f_tuple, T_yrs=1.0):
     """Cosmic Explorer approximate sensitivity in Omega_gw."""
+    f = np.array(f_tuple)
     omega = np.full_like(f, 1e-1)
     mask = (f > 5) & (f < 4000)
     if np.sum(mask) == 0:
@@ -192,8 +201,10 @@ def get_ce_sensitivity(f, T_yrs=1.0):
     return omega
 
 
-def get_aligo_approx(f):
+@st.cache_data
+def get_aligo_approx(f_tuple):
     """aLIGO approximate sensitivity in Omega_gw."""
+    f = np.array(f_tuple)
     omega = np.full_like(f, 1e-5)
     mask = (f > 10) & (f < 2000)
     f_band = f[mask]
@@ -201,8 +212,10 @@ def get_aligo_approx(f):
     return omega
 
 
-def get_bbo_approx(f, T_yrs=5.0):
+@st.cache_data
+def get_bbo_approx(f_tuple, T_yrs=5.0):
     """BBO approximate sensitivity in Omega_gw."""
+    f = np.array(f_tuple)
     mask = (f > 1e-3) & (f < 100)
     L_bbo = 5.0e7
     S_pos, S_acc = 2.0e-34, 9.0e-34
@@ -218,8 +231,10 @@ def get_bbo_approx(f, T_yrs=5.0):
     return omega
 
 
-def get_dwd_foreground(f):
+@st.cache_data
+def get_dwd_foreground(f_tuple):
     """Double white dwarf foreground in Omega_gw."""
+    f = np.array(f_tuple)
     A_wd, f_knee = 3e-10, 3e-3
     mask = (f > 1e-4) & (f < 2e-2)
     omega = np.zeros_like(f)
@@ -241,6 +256,7 @@ def scale_amplitude(A_bench, reservoir, rho_smbh, rho_stellar, rho_nsc):
     return A_bench
 
 
+@st.cache_data
 def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cadence=26, preset='NANOGrav 15yr'):
     """
     PTA sensitivity curve in Omega_gw, independently calibrated to each array's published results.
@@ -401,7 +417,7 @@ show_ceiling = st.sidebar.checkbox("Show integrated ceiling", value=True)
 # Individual detector toggles
 with st.sidebar.expander("Detectors", expanded=True):
     show_lisa = st.checkbox("LISA", value=True)
-    show_muares = st.checkbox("μAres", value=True)
+    show_muares = st.checkbox("muAres", value=True)
     show_bbo = st.checkbox("BBO", value=True)
     show_aligo = st.checkbox("aLIGO", value=True)
     show_ce = st.checkbox("Cosmic Explorer", value=True)
@@ -410,7 +426,7 @@ with st.sidebar.expander("Detectors", expanded=True):
 # Observation time sliders for space-based detectors
 with st.sidebar.expander("Detector Observation Times", expanded=False):
     lisa_obs_years = st.slider("LISA (years)", min_value=1, max_value=10, value=4, step=1)
-    muares_obs_years = st.slider("μAres (years)", min_value=1, max_value=10, value=10, step=1)
+    muares_obs_years = st.slider("muAres (years)", min_value=1, max_value=10, value=10, step=1)
     bbo_obs_years = st.slider("BBO (years)", min_value=1, max_value=10, value=5, step=1)
 
 # PTA presets
@@ -461,7 +477,8 @@ selected_pops = st.sidebar.multiselect(
 fig, ax = plt.subplots(figsize=(14, 7))
 fig.patch.set_facecolor('white')
 
-f_grid = np.logspace(-9.5, 3.5, 3000)
+f_grid = F_GRID  # Use pre-computed grid
+f_grid_tuple = tuple(f_grid)  # For caching
 omega_cutoff = 1e-7
 
 # Set axis based on y-axis unit choice
@@ -487,15 +504,15 @@ ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numt
 det_labels = detector_labels_hc if use_hc else detector_labels_omega
 
 if show_muares:
-    muares = get_muares_sensitivity(f_grid, T_yrs=float(muares_obs_years))
+    muares = get_muares_sensitivity(f_grid_tuple, T_yrs=float(muares_obs_years))
     mask_mu = (f_grid > 1e-7) & (f_grid < 1e-1) & (muares < omega_cutoff)
     plot_mu = omega_to_hc(f_grid, muares) if use_hc else muares
     ax.loglog(f_grid[mask_mu], plot_mu[mask_mu], color='gray', ls='-.', alpha=0.6, lw=1.2)
-    lx, ly = det_labels['μAres']
-    ax.text(lx, ly, f'μAres ({muares_obs_years}yr)', fontsize=10, color='gray', ha='left')
+    lx, ly = det_labels['muAres']
+    ax.text(lx, ly, r'$\mu$Ares ({0}yr)'.format(muares_obs_years), fontsize=10, color='gray', ha='left')
 
 if show_bbo:
-    bbo = get_bbo_approx(f_grid, T_yrs=float(bbo_obs_years))
+    bbo = get_bbo_approx(f_grid_tuple, T_yrs=float(bbo_obs_years))
     mask_bbo = (bbo > 0) & (bbo < omega_cutoff)
     plot_bbo = omega_to_hc(f_grid, bbo) if use_hc else bbo
     ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color='gray', ls='--', alpha=0.6, lw=1.2)
@@ -503,7 +520,7 @@ if show_bbo:
     ax.text(lx, ly, f'BBO ({bbo_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
 if show_lisa:
-    lisa = get_lisa_sensitivity(f_grid, T_yrs=float(lisa_obs_years))
+    lisa = get_lisa_sensitivity(f_grid_tuple, T_yrs=float(lisa_obs_years))
     mask_lisa = lisa < omega_cutoff
     plot_lisa = omega_to_hc(f_grid, lisa) if use_hc else lisa
     ax.loglog(f_grid[mask_lisa], plot_lisa[mask_lisa], color='gray', ls='--', alpha=0.6, lw=1.5)
@@ -511,7 +528,7 @@ if show_lisa:
     ax.text(lx, ly, f'LISA ({lisa_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
 if show_aligo:
-    aligo = get_aligo_approx(f_grid)
+    aligo = get_aligo_approx(f_grid_tuple)
     mask_aligo = (aligo < 1e-4) & (aligo < omega_cutoff)
     plot_aligo = omega_to_hc(f_grid, aligo) if use_hc else aligo
     ax.loglog(f_grid[mask_aligo], plot_aligo[mask_aligo], color='gray', ls=':', alpha=0.6, lw=1.2)
@@ -519,7 +536,7 @@ if show_aligo:
     ax.text(lx, ly, 'aLIGO', fontsize=10, color='gray', ha='center')
 
 if show_ce:
-    ce = get_ce_sensitivity(f_grid, T_yrs=1.0)
+    ce = get_ce_sensitivity(f_grid_tuple, T_yrs=1.0)
     mask_ce = (ce < 1e-4) & (ce < omega_cutoff)
     plot_ce = omega_to_hc(f_grid, ce) if use_hc else ce
     ax.loglog(f_grid[mask_ce], plot_ce[mask_ce], color='gray', ls=':', alpha=0.6, lw=1.2)
@@ -596,7 +613,7 @@ if show_ptas:
 
 # DWD foreground
 if show_dwd:
-    omega_wd = get_dwd_foreground(f_grid)
+    omega_wd = get_dwd_foreground(f_grid_tuple)
     mask_wd = omega_wd > 1e-25
     if np.any(mask_wd):
         if use_hc:
@@ -721,17 +738,14 @@ Using ρ_SMBH = (1.8 ± 0.7) × 10⁶ M☉/Mpc³ from Liepold & Ma (2024), the S
 
 **A_ceiling = (1.6 ± 0.3) × 10⁻¹⁵** at f_ref = 1 yr⁻¹
 
-| PTA | A (×10⁻¹⁵) | Tension with ceiling |
-|-----|------------|---------------------|
+| PTA | A (×10⁻¹⁵) | Difference from ceiling |
+|-----|------------|------------------------|
 | PPTA DR3 | 2.04 ± 0.24 | ~1.3σ |
 | NANOGrav 15yr | 2.4 +0.7/-0.6 | ~1.2σ |
 | EPTA DR2 | 2.5 ± 0.7 | ~1.2σ |
 | MPTA | 4.8 +0.8/-0.9 | ~3.4σ |
 
-The remaining mild tension could indicate:
-1. Intrinsic scatter in SMBH-galaxy scaling relations
-2. Contributions from the high-mass tail of the SMBH mass function
-3. Cosmic variance from nearby massive binaries
+The primary way to reconcile the measured GWB amplitudes with the energetic ceiling is **mis-modeled pulsar noise**, which can bias the inferred amplitude high (see Goncharov et al. 2025). Other effects — such as intrinsic scatter in SMBH-galaxy scaling relations, contributions from the high-mass tail of the SMBH mass function, or cosmic variance from nearby massive binaries — would have more limited impact.
 """)
 
 # =============================================================================
