@@ -10,16 +10,19 @@ H0 = H0_km_s_Mpc * 1000.0 / 3.08567758e22
 h = H0_km_s_Mpc / 100.0
 
 # Fiducial reservoir densities (Msun/Mpc^3)
-RHO_SMBH_FID = 4.2e5
+# SMBH density updated to Liepold & Ma (2024) value
+RHO_SMBH_FID = 1.8e6  # Liepold & Ma (2024), ApJL 971, L29
 RHO_STELLAR_FID = 5.9e8
 RHO_NSC_FID = 1.4e6
 
 # Population parameters from Table I
+# SMBHB A_bench updated for L&M (2024) density: A = 1.6e-15 at f_ref = 1/yr
+# IMBH-SMBH A_bench scaled by sqrt(1.8e6/4.2e5) = 2.07
 POPULATIONS = {
     'SMBHB': {
         'reservoir': 'SMBH',
         'f_ref': 3.2e-8,
-        'A_bench': 1.0e-15,
+        'A_bench': 1.6e-15,  # Updated for L&M (2024)
         'f_min': 1e-9,
         'f_max': 4e-7,
         'f_merge_fid': 0.1,
@@ -29,7 +32,7 @@ POPULATIONS = {
     'IMBH-SMBH': {
         'reservoir': 'SMBH',
         'f_ref': 3e-3,
-        'A_bench': 1.1e-20,
+        'A_bench': 2.3e-20,  # Scaled from 1.1e-20 by sqrt(1.8e6/4.2e5)
         'f_min': 1e-5,
         'f_max': 4e-2,
         'f_merge_fid': 0.05,
@@ -337,9 +340,9 @@ how the GWB amplitudes scale.
 st.sidebar.header("Mass Reservoirs")
 st.sidebar.markdown("Adjust reservoir densities (M☉/Mpc³)")
 
-# Initialize session state with fiducial values
+# Initialize session state with fiducial values (updated for L&M 2024)
 if 'rho_smbh_val' not in st.session_state:
-    st.session_state.rho_smbh_val = 4.2
+    st.session_state.rho_smbh_val = 1.8  # ×10^6, L&M (2024)
 if 'rho_stellar_val' not in st.session_state:
     st.session_state.rho_stellar_val = 5.9
 if 'rho_nsc_val' not in st.session_state:
@@ -347,18 +350,18 @@ if 'rho_nsc_val' not in st.session_state:
 
 # Reset button
 if st.sidebar.button("Reset to Table I values"):
-    st.session_state.rho_smbh_val = 4.2
+    st.session_state.rho_smbh_val = 1.8  # L&M (2024)
     st.session_state.rho_stellar_val = 5.9
     st.session_state.rho_nsc_val = 1.4
     st.rerun()
 
 rho_smbh = st.sidebar.slider(
-    "ρ_SMBH (×10⁵)",
-    min_value=1.0, max_value=10.0,
+    "ρ_SMBH (×10⁶)",  # Changed from ×10⁵ to ×10⁶
+    min_value=0.5, max_value=5.0,
     value=st.session_state.rho_smbh_val,
     step=0.1,
     key='rho_smbh_val'
-) * 1e5
+) * 1e6  # Changed from 1e5 to 1e6
 
 rho_stellar = st.sidebar.slider(
     "ρ_★ (×10⁸)",
@@ -646,8 +649,8 @@ st.subheader("Table I: GWB Population Parameters")
 table1 = """
 | Population | Reservoir | ρ (M☉/Mpc³) | f_merge | ε_gw | f_ref (Hz) | A_ceiling | Band |
 |------------|-----------|-------------|---------|------|------------|-----------|------|
-| **SMBHBs** | SMBH | 4.2×10⁵ | 0.1 | 0.02 | 3.2×10⁻⁸ | 1.0×10⁻¹⁵ | PTA |
-| **IMBH-SMBH** | SMBH | 4.2×10⁵ | 0.05 | 0.05 | 3×10⁻³ | 1.1×10⁻²⁰ | LISA |
+| **SMBHBs** | SMBH | 1.8×10⁶ | 0.1 | 0.02 | 3.2×10⁻⁸ | 1.6×10⁻¹⁵ | PTA |
+| **IMBH-SMBH** | SMBH | 1.8×10⁶ | 0.05 | 0.05 | 3×10⁻³ | 2.3×10⁻²⁰ | LISA |
 | **EMRI** | NSC | 1.4×10⁶ | 0.1 | 0.05 | 10⁻² | 1.1×10⁻²⁰ | LISA |
 | **BNS** | Stellar | 5.9×10⁸ | 1.1×10⁻⁵ | 0.01 | 0.1 | 6.7×10⁻²⁴ | Ground |
 | **Pop III BBH** | Stellar | 5.9×10⁸ | 3×10⁻⁷ | 0.05 | 0.1 | 4.9×10⁻²⁴ | Ground |
@@ -655,7 +658,8 @@ table1 = """
 """
 st.markdown(table1)
 st.caption("""
-**ρ**: Mass density reservoir. **f_merge**: Fraction of reservoir that merges within a Hubble time. 
+**ρ**: Mass density reservoir. SMBH density from Liepold & Ma (2024), ApJL 971, L29.
+**f_merge**: Fraction of reservoir that merges within a Hubble time. 
 **ε_gw**: Radiative efficiency. **A_ceiling**: Maximum characteristic strain amplitude at f_ref.
 Amplitudes scale as A ∝ √ρ relative to fiducial values.
 """)
@@ -677,20 +681,31 @@ for i, name in enumerate(selected_pops):
     )
 
 # =============================================================================
-# SMBHB Ceiling Tension
+# SMBHB Ceiling Comparison
 # =============================================================================
 st.markdown("---")
-st.subheader("SMBHB Ceiling Tension")
+st.subheader("SMBHB Ceiling vs PTA Measurements")
 st.markdown("""
-**Key result:** All PTA-measured GWB amplitudes **exceed** the SMBHB energetic ceiling (A ≤ 1.0×10⁻¹⁵).
+**Updated result with Liepold & Ma (2024) SMBH density:**
 
-The SMBHB ceiling (cyan curve) is *not* a sensitivity limit—it is the **maximum amplitude** 
-that SMBHBs can produce given the available mass budget from the Kormendy & Ho (2013) scaling relations.
+Using ρ_SMBH = (1.8 ± 0.7) × 10⁶ M☉/Mpc³ from Liepold & Ma (2024), the SMBHB energetic ceiling is:
 
-This tension suggests one or more of:
-1. Unmodeled pulsar noise contaminating the GWB measurement
-2. Underestimated SMBH demographics (high-mass tail, intrinsic scatter)
-3. Contributions from exotic physics
+**A_ceiling = (1.6 ± 0.3) × 10⁻¹⁵** at f_ref = 1 yr⁻¹
+
+This is ~60% higher than estimates based on Kormendy & Ho (2013) demographics, 
+significantly reducing the tension with PTA measurements:
+
+| PTA | A (×10⁻¹⁵) | Tension with ceiling |
+|-----|------------|---------------------|
+| PPTA DR3 | 2.04 ± 0.24 | ~1.3σ |
+| NANOGrav 15yr | 2.4 +0.7/-0.6 | ~1.2σ |
+| EPTA DR2 | 2.5 ± 0.7 | ~1.2σ |
+| MPTA | 4.8 +0.8/-0.9 | ~3.4σ |
+
+The remaining mild tension could indicate:
+1. Intrinsic scatter in SMBH-galaxy scaling relations
+2. Contributions from the high-mass tail of the SMBH mass function
+3. Cosmic variance from nearby massive binaries
 """)
 
 # =============================================================================
