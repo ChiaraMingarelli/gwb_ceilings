@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import LogLocator, FuncFormatter, NullFormatter
+from matplotlib.ticker import LogLocator, FixedLocator, FuncFormatter, NullFormatter
 import io
 
 # Unicode superscript map for tick labels (avoids mathtext parser entirely)
@@ -517,8 +517,12 @@ ax.set_xscale('log')
 ax.set_yscale('log')
 ax.set_xlabel('Frequency f [Hz]', fontsize=14)
 
-ax.xaxis.set_major_locator(LogLocator(base=10, numticks=20))
-ax.yaxis.set_major_locator(LogLocator(base=10, numticks=20))
+# One major tick per decade
+ax.xaxis.set_major_locator(FixedLocator([10**i for i in range(-9, 4)]))
+if use_hc:
+    ax.yaxis.set_major_locator(FixedLocator([10**i for i in range(-26, -11)]))
+else:
+    ax.yaxis.set_major_locator(FixedLocator([10**i for i in range(-18, -5)]))
 ax.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 # NOTE: tick formatters are set after all loglog() calls, right before tight_layout(),
