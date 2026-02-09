@@ -499,10 +499,10 @@ use_hc = (y_axis_unit == "h_c (characteristic strain)")
 ax.set_xlim(1e-9, 3e3)
 if use_hc:
     ax.set_ylim(1e-26, 1e-12)
-    ax.set_ylabel(r'Characteristic Strain $h_c(f)$', fontsize=14)
+    ax.set_ylabel('Characteristic Strain hc(f)', fontsize=14)
 else:
     ax.set_ylim(1e-18, 1e-6)
-    ax.set_ylabel(r'$\Omega_{\mathrm{gw}}(f)$', fontsize=14)
+    ax.set_ylabel('\u03A9gw(f)', fontsize=14)
 ax.set_xscale('log')
 ax.set_yscale('log')
 ax.set_xlabel('Frequency f [Hz]', fontsize=14)
@@ -524,7 +524,7 @@ if show_muares:
     plot_mu = omega_to_hc(f_grid, muares) if use_hc else muares
     ax.loglog(f_grid[mask_mu], plot_mu[mask_mu], color='gray', ls='-.', alpha=0.6, lw=1.2)
     lx, ly = det_labels['muAres']
-    ax.text(lx, ly, r'$\mu$Ares ({0}yr)'.format(muares_obs_years), fontsize=10, color='gray', ha='left')
+    ax.text(lx, ly, '\u03bcAres ({0}yr)'.format(muares_obs_years), fontsize=10, color='gray', ha='left')
 
 if show_bbo:
     bbo = get_bbo_approx(f_grid_tuple, T_yrs=float(bbo_obs_years))
