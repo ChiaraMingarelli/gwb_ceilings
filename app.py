@@ -153,8 +153,8 @@ pta_label_pos_omega = {
     'NANOGrav 15yr': (2e-9, 5e-10, 'left'),
     'EPTA DR2': (1.5e-9, 2e-11, 'left'),
     'PPTA DR3': (2e-9, 1.2e-10, 'left'),
-    'MPTA': (6e-8, 5e-9, 'left'),
-    'CPTA': (1.2e-7, 1.5e-9, 'left'),
+    'MPTA': (5e-9, 5e-9, 'right'),
+    'CPTA': (7e-9, 1.5e-9, 'right'),
     'IPTA DR3 (proj.)': (1.5e-9, 3e-12, 'left'),
     'SKA-era': (3e-9, 5e-14, 'left'),
 }
