@@ -590,8 +590,9 @@ if show_ptas:
         mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
         if np.any(mask_pta):
             style = pta_styles.get(pta_name, {'color': 'gray', 'ls': '-'})
-            plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
-            ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
+            pta_plot_omega = np.minimum(pta_omega, 1e-7) if show_ceiling else pta_omega
+            plot_pta = omega_to_hc(pta_freqs, pta_plot_omega) if use_hc else pta_plot_omega
+            ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta],
                      color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
             label_text = pta_name.replace(' (proj.)', '*').replace('NANOGrav ', 'NG').replace('yr', '')
             if not use_hc and pta_name in pta_label_pos_omega:
@@ -618,8 +619,9 @@ if show_ptas:
         mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
         if np.any(mask_pta):
             style = pta_styles['Custom']
-            plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
-            ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
+            pta_plot_omega = np.minimum(pta_omega, 1e-7) if show_ceiling else pta_omega
+            plot_pta = omega_to_hc(pta_freqs, pta_plot_omega) if use_hc else pta_plot_omega
+            ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta],
                      color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
             min_idx = np.argmin(plot_pta[mask_pta])
             label_x = pta_freqs[mask_pta][min_idx]
