@@ -26,9 +26,11 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Reference
+## Citation
 
-Based on "Energetic Ceilings on Astrophysical Stochastic Gravitational-Wave Backgrounds" - see Table I for fiducial parameter values.
+If you use figures from this tool, please cite:
+
+> Mingarelli, C. M. F. (2026), "Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds", [arXiv:2601.18859](https://arxiv.org/abs/2601.18859)
 
 ## License
 
