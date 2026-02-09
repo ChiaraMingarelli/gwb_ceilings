@@ -389,7 +389,7 @@ how the GWB amplitudes scale.
 
 **Reference:** Mingarelli (2026), *Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds* — [arXiv:2601.18859](https://arxiv.org/abs/2601.18859)
 
-If you use figures from this tool in a publication, please cite [Mingarelli (2026)](https://arxiv.org/abs/2601.18859).
+If you use figures from this tool, please cite [Mingarelli (2026)](https://arxiv.org/abs/2601.18859).
 """)
 
 # Sidebar controls
@@ -716,6 +716,11 @@ ax.yaxis.set_minor_formatter(NullFormatter())
 plt.tight_layout()
 st.pyplot(fig)
 
+# Add citation to figure for downloads
+fig.text(0.99, 0.01, 'Mingarelli (2026) arXiv:2601.18859',
+         fontsize=8, color='gray', ha='right', va='bottom',
+         transform=fig.transFigure)
+
 # Download button for PDF
 img = io.BytesIO()
 try:
@@ -834,7 +839,7 @@ if show_ptas and (len(pta_presets) > 0 or show_custom_pta):
 # =============================================================================
 st.markdown("---")
 st.markdown("""
-**Citation:** If you use figures from this tool in a publication, please cite:
+**Citation:** If you use figures from this tool, please cite:
 
 > Mingarelli, C. M. F. (2026), "Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds",
 > [arXiv:2601.18859](https://arxiv.org/abs/2601.18859)
