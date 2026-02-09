@@ -517,16 +517,8 @@ ax.set_xscale('log')
 ax.set_yscale('log')
 ax.set_xlabel('Frequency f [Hz]', fontsize=14)
 
-# One major tick per decade
-ax.xaxis.set_major_locator(FixedLocator([10**i for i in range(-9, 4)]))
-if use_hc:
-    ax.yaxis.set_major_locator(FixedLocator([10**i for i in range(-26, -11)]))
-else:
-    ax.yaxis.set_major_locator(FixedLocator([10**i for i in range(-18, -5)]))
-ax.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
-ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
-# NOTE: tick formatters are set after all loglog() calls, right before tight_layout(),
-# because loglog() internally calls set_xscale('log') which resets formatters.
+# NOTE: tick locators and formatters are set after all loglog() calls,
+# right before tight_layout(), because loglog() resets them.
 
 # Detectors - individual toggles
 det_labels = detector_labels_hc if use_hc else detector_labels_omega
@@ -700,7 +692,14 @@ ax.grid(False)
 for spine in ax.spines.values():
     spine.set_linewidth(1.2)
 
-# Set tick formatters AFTER all loglog() calls, because loglog() resets them
+# Set tick locators and formatters AFTER all loglog() calls, because loglog() resets them
+ax.xaxis.set_major_locator(FixedLocator([10**i for i in range(-9, 4)]))
+if use_hc:
+    ax.yaxis.set_major_locator(FixedLocator([10**i for i in range(-26, -11)]))
+else:
+    ax.yaxis.set_major_locator(FixedLocator([10**i for i in range(-18, -5)]))
+ax.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
+ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 ax.xaxis.set_major_formatter(FuncFormatter(_log_fmt))
 ax.yaxis.set_major_formatter(FuncFormatter(_log_fmt))
 ax.xaxis.set_minor_formatter(NullFormatter())
