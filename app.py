@@ -1,8 +1,20 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import LogLocator, LogFormatterSciNotation
+from matplotlib.ticker import LogLocator, FuncFormatter
 import io
+
+# Unicode superscript map for tick labels (avoids mathtext parser entirely)
+_SUP = str.maketrans('-0123456789', '⁻⁰¹²³⁴⁵⁶⁷⁸⁹')
+
+def _log_fmt(x, pos):
+    """Format log-scale tick labels using Unicode superscripts."""
+    if x <= 0:
+        return ''
+    exp = round(np.log10(x))
+    if abs(x - 10**exp) / max(x, 1e-30) < 0.01:
+        return f'10{str(exp).translate(_SUP)}'
+    return ''
 
 # =============================================================================
 # Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds
@@ -499,9 +511,9 @@ ax.xaxis.set_major_locator(LogLocator(base=10, numticks=20))
 ax.yaxis.set_major_locator(LogLocator(base=10, numticks=20))
 ax.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
-# Use explicit formatter to avoid mathtext parsing issues in PDF backend
-ax.xaxis.set_major_formatter(LogFormatterSciNotation(base=10, labelOnlyBase=True))
-ax.yaxis.set_major_formatter(LogFormatterSciNotation(base=10, labelOnlyBase=True))
+# Use Unicode tick labels to bypass mathtext parser (avoids crashes on some matplotlib versions)
+ax.xaxis.set_major_formatter(FuncFormatter(_log_fmt))
+ax.yaxis.set_major_formatter(FuncFormatter(_log_fmt))
 
 # Detectors - individual toggles
 det_labels = detector_labels_hc if use_hc else detector_labels_omega
