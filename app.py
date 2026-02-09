@@ -521,11 +521,8 @@ ax.xaxis.set_major_locator(LogLocator(base=10, numticks=20))
 ax.yaxis.set_major_locator(LogLocator(base=10, numticks=20))
 ax.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
-# Use Unicode tick labels to bypass mathtext parser (avoids crashes on some matplotlib versions)
-ax.xaxis.set_major_formatter(FuncFormatter(_log_fmt))
-ax.yaxis.set_major_formatter(FuncFormatter(_log_fmt))
-ax.xaxis.set_minor_formatter(NullFormatter())
-ax.yaxis.set_minor_formatter(NullFormatter())
+# NOTE: tick formatters are set after all loglog() calls, right before tight_layout(),
+# because loglog() internally calls set_xscale('log') which resets formatters.
 
 # Detectors - individual toggles
 det_labels = detector_labels_hc if use_hc else detector_labels_omega
@@ -698,6 +695,12 @@ ax.tick_params(axis='both', which='minor', length=3)
 ax.grid(False)
 for spine in ax.spines.values():
     spine.set_linewidth(1.2)
+
+# Set tick formatters AFTER all loglog() calls, because loglog() resets them
+ax.xaxis.set_major_formatter(FuncFormatter(_log_fmt))
+ax.yaxis.set_major_formatter(FuncFormatter(_log_fmt))
+ax.xaxis.set_minor_formatter(NullFormatter())
+ax.yaxis.set_minor_formatter(NullFormatter())
 
 plt.tight_layout()
 st.pyplot(fig)
