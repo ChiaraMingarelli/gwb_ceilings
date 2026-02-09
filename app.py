@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import LogLocator
+from matplotlib.ticker import LogLocator, LogFormatterSciNotation
 import io
 
 # =============================================================================
@@ -499,6 +499,9 @@ ax.xaxis.set_major_locator(LogLocator(base=10, numticks=20))
 ax.yaxis.set_major_locator(LogLocator(base=10, numticks=20))
 ax.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
+# Use explicit formatter to avoid mathtext parsing issues in PDF backend
+ax.xaxis.set_major_formatter(LogFormatterSciNotation(base=10, labelOnlyBase=True))
+ax.yaxis.set_major_formatter(LogFormatterSciNotation(base=10, labelOnlyBase=True))
 
 # Detectors - individual toggles
 det_labels = detector_labels_hc if use_hc else detector_labels_omega
@@ -677,14 +680,27 @@ st.pyplot(fig)
 
 # Download button for PDF
 img = io.BytesIO()
-fig.savefig(img, format='pdf', dpi=300, bbox_inches='tight')
-img.seek(0)
-st.download_button(
-    label="Download Figure as PDF",
-    data=img,
-    file_name="gw_ceiling.pdf",
-    mime="application/pdf"
-)
+try:
+    fig.savefig(img, format='pdf', dpi=300, bbox_inches='tight')
+    img.seek(0)
+    st.download_button(
+        label="Download Figure as PDF",
+        data=img,
+        file_name="gw_ceiling.pdf",
+        mime="application/pdf"
+    )
+except ValueError:
+    # Fallback: PDF mathtext rendering can fail in some matplotlib versions.
+    # Save as PNG instead.
+    img = io.BytesIO()
+    fig.savefig(img, format='png', dpi=300, bbox_inches='tight')
+    img.seek(0)
+    st.download_button(
+        label="Download Figure as PNG",
+        data=img,
+        file_name="gw_ceiling.png",
+        mime="image/png"
+    )
 
 # =============================================================================
 # TABLE I - Population Parameters
