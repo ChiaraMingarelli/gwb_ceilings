@@ -146,6 +146,19 @@ detector_labels_hc = {
     'CE': (20, 3e-25),
 }
 
+# PTA label positions for Omega_gw mode: (x, y, ha)
+# Long-baseline PTAs labelled at left edge where curves are well-separated;
+# short-baseline PTAs (MPTA, CPTA) labelled near their minima offset to the right.
+pta_label_pos_omega = {
+    'NANOGrav 15yr': (2e-9, 5e-10, 'left'),
+    'EPTA DR2': (1.5e-9, 2e-11, 'left'),
+    'PPTA DR3': (2e-9, 1.2e-10, 'left'),
+    'MPTA': (6e-8, 5e-9, 'left'),
+    'CPTA': (1.2e-7, 1.5e-9, 'left'),
+    'IPTA DR3 (proj.)': (1.5e-9, 3e-12, 'left'),
+    'SKA-era': (3e-9, 5e-14, 'left'),
+}
+
 display_names = {
     'SMBHB': 'SMBHBs',
     'IMBH-SMBH': 'IMBH',
@@ -585,18 +598,18 @@ if show_ptas:
             plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
             ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta], 
                      color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
-            # Place label at curve minimum, offset to avoid overlap
-            min_idx = np.argmin(plot_pta[mask_pta])
-            label_x = pta_freqs[mask_pta][min_idx]
-            # In h_c mode, put label above curve; in omega mode, put below
-            if use_hc:
-                label_y = plot_pta[mask_pta][min_idx] * 3  # above curve
-                va = 'bottom'
-            else:
-                label_y = plot_pta[mask_pta][min_idx] * 0.3  # below curve
-                va = 'top'
             label_text = pta_name.replace(' (proj.)', '*').replace('NANOGrav ', 'NG').replace('yr', '')
-            ax.text(label_x, label_y, label_text, fontsize=10, color=style['color'], ha='center', va=va)
+            if not use_hc and pta_name in pta_label_pos_omega:
+                lx, ly, ha_lbl = pta_label_pos_omega[pta_name]
+                ax.text(lx, ly, label_text, fontsize=9, color=style['color'],
+                        ha=ha_lbl, va='center', fontweight='bold')
+            else:
+                min_idx = np.argmin(plot_pta[mask_pta])
+                label_x = pta_freqs[mask_pta][min_idx]
+                label_y = plot_pta[mask_pta][min_idx] * (3 if use_hc else 0.3)
+                va = 'bottom' if use_hc else 'top'
+                ax.text(label_x, label_y, label_text, fontsize=9, color=style['color'],
+                        ha='center', va=va, fontweight='bold')
     
     # Custom PTA if enabled
     if show_custom_pta:
