@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import LogLocator, FuncFormatter
+from matplotlib.ticker import LogLocator, FuncFormatter, NullFormatter
 import io
 
 # Unicode superscript map for tick labels (avoids mathtext parser entirely)
@@ -524,6 +524,8 @@ ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numt
 # Use Unicode tick labels to bypass mathtext parser (avoids crashes on some matplotlib versions)
 ax.xaxis.set_major_formatter(FuncFormatter(_log_fmt))
 ax.yaxis.set_major_formatter(FuncFormatter(_log_fmt))
+ax.xaxis.set_minor_formatter(NullFormatter())
+ax.yaxis.set_minor_formatter(NullFormatter())
 
 # Detectors - individual toggles
 det_labels = detector_labels_hc if use_hc else detector_labels_omega
