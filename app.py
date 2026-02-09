@@ -351,9 +351,6 @@ def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cade
     prefac = 2 * np.pi**2 / (3 * H0**2)
     omega_gw = prefac * freqs**2 * h_c**2
     
-    # Cap at integrated astrophysical ceiling (Omega_gw < 1e-7)
-    omega_gw = np.minimum(omega_gw, 1e-7)
-    
     return freqs, omega_gw
 
 
