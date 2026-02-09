@@ -24,8 +24,12 @@ def _log_fmt(x, pos):
 # Author: Chiara Mingarelli (Yale University)
 # Code development assisted by Claude (Anthropic)
 #
-# Reference: Mingarelli (2026), "Energetic Ceilings on Astrophysical 
-#            Gravitational-Wave Backgrounds"
+# Reference: Mingarelli (2026), "Energetic Ceilings on Astrophysical
+#            Gravitational-Wave Backgrounds", arXiv:2601.18859
+#
+# If you use figures from this tool, please cite:
+#   Mingarelli, C. M. F. (2026), arXiv:2601.18859
+#   https://arxiv.org/abs/2601.18859
 # =============================================================================
 
 # Physical Constants
@@ -383,7 +387,9 @@ Interactive visualization of astrophysical gravitational wave background ceiling
 based on energy reservoir constraints. Adjust the mass density reservoirs to see 
 how the GWB amplitudes scale.
 
-**Reference:** Mingarelli (2026), *Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds*
+**Reference:** Mingarelli (2026), *Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds* — [arXiv:2601.18859](https://arxiv.org/abs/2601.18859)
+
+If you use figures from this tool in a publication, please cite [Mingarelli (2026)](https://arxiv.org/abs/2601.18859).
 """)
 
 # Sidebar controls
@@ -822,3 +828,14 @@ if show_ptas and (len(pta_presets) > 0 or show_custom_pta):
     st.caption("All amplitudes A are at **fixed γ=13/3** (α=-2/3). σ_RMS values are approximate array-averaged timing precisions.")
     st.caption("IPTA DR3 scaling: h_c ∝ 1/√(N_pairs × T), where N_pairs = N(N-1)/2, see e.g. Siemens et al. (2013). With ~115 pulsars (6555 pairs vs NANOGrav's 2211) and 25-year baseline, improvement ≈ √(3.0 × 1.7) ≈ 2.2×, and with additional gains from combined noise modeling 2.5x is reasonable..")
     st.caption("PTA sensitivity curves use the formalism of [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341), implemented in [hasasia](https://github.com/Hazboun6/hasasia).")
+
+# =============================================================================
+# CITATION
+# =============================================================================
+st.markdown("---")
+st.markdown("""
+**Citation:** If you use figures from this tool in a publication, please cite:
+
+> Mingarelli, C. M. F. (2026), "Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds",
+> [arXiv:2601.18859](https://arxiv.org/abs/2601.18859)
+""")
