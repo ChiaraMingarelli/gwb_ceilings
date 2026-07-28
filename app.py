@@ -66,6 +66,13 @@ CE_40KM_STRAIN_SHA256 = (
     "ebc9145dc9079b9f8839730ba8ce6642dc25542b1fe63c22db90982abf61c29c"
 )
 
+# PTA sensitivity data (see data/pta/README.md for provenance)
+PTA_DATA_DIR = Path(__file__).resolve().parent / "data" / "pta"
+NG15_SENS_FILE = PTA_DATA_DIR / "sensitivity_curves_NG15yr_fullPTA.txt"
+NG15_SENS_SHA256 = (
+    "363bb8aabd76f0973d3075cfa7a4f83bd9ae91e0a104d6d53bcdfe507da29544"
+)
+
 # Pre-compute frequency grid (reduced from 3000 to 1000 points for speed)
 F_GRID = np.logspace(-9.5, 3.5, 1000)
 
@@ -232,19 +239,6 @@ detector_labels_hc = {
     'LISA': (5e-4, 1e-17),
     'aLIGO': (50, 3e-22),
     'CE': (20, 3e-25),
-}
-
-# PTA label positions for Omega_gw mode: (x, y, ha)
-# Long-baseline PTAs labelled at left edge where curves are well-separated;
-# short-baseline PTAs (MPTA, CPTA) labelled near their minima offset to the right.
-pta_label_pos_omega = {
-    'NANOGrav 15yr': (2e-9, 5e-10, 'left'),
-    'EPTA DR2': (1.5e-9, 2e-11, 'left'),
-    'PPTA DR3': (2e-9, 1.2e-10, 'left'),
-    'MPTA': (5e-9, 5e-9, 'right'),
-    'CPTA': (7e-9, 1.5e-9, 'right'),
-    'IPTA DR3 (proj.)': (1.5e-9, 3e-12, 'left'),
-    'SKA-era': (3e-9, 5e-14, 'left'),
 }
 
 display_names = {
@@ -538,89 +532,27 @@ def reservoir_ratio(reservoir, rho_smbh, rho_stellar, rho_nsc):
 
 
 @st.cache_data
-def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cadence=26, preset='NANOGrav 15yr'):
+def load_ng15_official_curve():
+    """Official NANOGrav 15-yr full-PTA GWB sensitivity curve.
+
+    Real per-pulsar noise (white + common process + individual red noise);
+    Agazie et al. (2023), ApJL 951, L10; Zenodo 10.5281/zenodo.8092346.
     """
-    PTA sensitivity curve in Omega_gw, independently calibrated to each array's published results.
-    
-    Uses the formalism of Hazboun, Romano & Smith (2019), PRD 100, 104028.
-    https://github.com/Hazboun6/hasasia
-    
-    Each PTA with a published detection is calibrated to its own reported amplitude.
-    Projections (IPTA DR3, SKA-era) are scaled from the most similar existing array.
-    
-    Parameters:
-    -----------
-    n_pulsars : int
-        Number of pulsars in the array
-    timespan : float
-        Observation timespan in years
-    sigma_ns : float
-        RMS timing residual in nanoseconds
-    cadence : int
-        Observations per year
-    preset : str
-        PTA name for independent calibration
-    
-    Returns:
-    --------
-    freqs, omega_gw : arrays
-    """
-    # Frequency array
-    f_yr = 1.0 / (365.25 * 24 * 3600)  # 1/year in Hz
-    T_sec = timespan * 365.25 * 24 * 3600
-    f_min = 1.0 / T_sec
-    f_max = cadence / (2 * 365.25 * 24 * 3600)
-    freqs = np.logspace(np.log10(f_min * 0.5), np.log10(f_max), 100)
-    
-    # Independent calibrations based on published detections at FIXED gamma=13/3
-    # Each array's sensitivity is set to match their detection threshold
-    # (sensitivity ~ 0.8-0.9 × detected amplitude for a ~3-5 sigma detection)
-    calibrations = {
-        # Detected signals - calibrated to each array's published amplitude at gamma=13/3
-        'NANOGrav 15yr': {'h_c_min': 2.0e-15, 'n': 67, 'T': 15.0, 'sigma': 300, 'cad': 26},  # SNM A=2.4e-15 (Agazie+ 2023); revised CNM A=2.1e-15 (Agarwal+ 2026)
-        'EPTA DR2': {'h_c_min': 2.1e-15, 'n': 25, 'T': 24.0, 'sigma': 500, 'cad': 20},       # A=2.5e-15 (EPTA+ 2023)
-        'PPTA DR3': {'h_c_min': 1.7e-15, 'n': 30, 'T': 18.0, 'sigma': 400, 'cad': 26},       # A=2.0e-15 (Reardon+ 2023)
-        'CPTA': {'h_c_min': 1.7e-15, 'n': 57, 'T': 3.4, 'sigma': 100, 'cad': 26},            # A=2.0e-15 (Xu+ 2023, fixed alpha)
-        'MPTA': {'h_c_min': 4.0e-15, 'n': 83, 'T': 4.5, 'sigma': 200, 'cad': 26},            # A=4.8e-15 (Miles+ 2025, fixed alpha)
-        'IPTA DR3 (proj.)': {'h_c_min': 8.0e-16, 'n': 115, 'T': 25.0, 'sigma': 200, 'cad': 26},
-        'SKA-era': {'h_c_min': 7.0e-17, 'n': 200, 'T': 20.0, 'sigma': 50, 'cad': 52},
-    }
-    
-    # Get calibration for this preset
-    if preset in calibrations and preset != 'Custom':
-        h_c_min = calibrations[preset]['h_c_min']
-    else:
-        # Custom: scale from NANOGrav 15yr based on user parameters
-        n_ref, T_ref, sigma_ref, cad_ref = 67, 15.0, 300.0, 26
-        h_c_ref = 2.0e-15
-        
-        N_pairs_ref = n_ref * (n_ref - 1) / 2
-        N_pairs = n_pulsars * (n_pulsars - 1) / 2
-        
-        # Sensitivity scales as: sigma / sqrt(N_pairs * T * cadence)
-        scaling = (sigma_ns / sigma_ref) * \
-                  np.sqrt(N_pairs_ref / max(N_pairs, 1)) * \
-                  np.sqrt(T_ref / max(timespan, 0.1)) * \
-                  np.sqrt(cad_ref / max(cadence, 1))
-        h_c_min = h_c_ref * scaling
-    
-    # Frequency-dependent sensitivity shape (from PTA physics)
-    f_low = 1.5 / T_sec  # Timing model cutoff
-    f_high = cadence * f_yr / 3  # White noise takeover
-    
-    # Shape function: minimum near geometric mean of f_low and f_high
-    low_f_rise = (f_low / freqs)**4
-    high_f_rise = (freqs / f_high)**2
-    shape = np.sqrt(1 + low_f_rise + high_f_rise)
-    
-    # Normalize so minimum = h_c_min
-    h_c = h_c_min * shape / np.min(shape)
-    
-    # Convert to Omega_gw: Omega = (2π²/3H₀²) f² h_c²
+    digest = hashlib.sha256(NG15_SENS_FILE.read_bytes()).hexdigest()
+    if digest != NG15_SENS_SHA256:
+        raise RuntimeError("NG15 sensitivity curve source hash changed.")
+    f, hc = np.loadtxt(NG15_SENS_FILE, delimiter=",", usecols=(0, 1),
+                       unpack=True)
+    return f, hc
+
+
+def get_pta_curve(preset):
+    """Return (freqs, omega_gw) for a PTA preset from the pinned data products."""
+    if preset != 'NANOGrav 15yr':
+        raise ValueError(f"No sensitivity-curve data product for {preset!r}.")
+    freqs, h_c = load_ng15_official_curve()
     prefac = 2 * np.pi**2 / (3 * H0**2)
-    omega_gw = prefac * freqs**2 * h_c**2
-    
-    return freqs, omega_gw
+    return freqs, prefac * freqs**2 * h_c**2
 
 
 def omega_to_hc(freqs, omega_gw):
@@ -708,40 +640,26 @@ with st.sidebar.expander("Detector Observation Times", expanded=False):
     bbo_obs_years = st.slider("BBO (years)", min_value=1, max_value=10, value=5, step=1)
     ce_obs_years = st.slider("CE (years)", min_value=1, max_value=10, value=1, step=1)
 
-# PTA presets
-PTA_PRESETS = {
-    'NANOGrav 15yr': {'n_pulsars': 67, 'timespan': 15.0, 'sigma_ns': 300, 'cadence': 26},
-    'EPTA DR2': {'n_pulsars': 25, 'timespan': 24.0, 'sigma_ns': 500, 'cadence': 20},
-    'PPTA DR3': {'n_pulsars': 30, 'timespan': 18.0, 'sigma_ns': 400, 'cadence': 26},
-    'MPTA': {'n_pulsars': 83, 'timespan': 4.5, 'sigma_ns': 200, 'cadence': 26},
-    'CPTA': {'n_pulsars': 57, 'timespan': 3.4, 'sigma_ns': 100, 'cadence': 26},
-    'IPTA DR3 (proj.)': {'n_pulsars': 115, 'timespan': 25.0, 'sigma_ns': 200, 'cadence': 26},
-    'SKA-era': {'n_pulsars': 200, 'timespan': 20.0, 'sigma_ns': 50, 'cadence': 52},
-    'Custom': None
-}
+# PTA sensitivity curves: only the official NANOGrav 15-yr real-noise
+# data product is offered (data/pta/).  EPTA/PPTA/MPTA/CPTA curves are
+# not shown because no real-noise curve products are published for them;
+# their amplitudes remain in the tables below.  Future-array projections
+# are deliberately out of scope.
+PTA_CURVE_PRESETS = ['NANOGrav 15yr']
 
 # PTA parameters (sensitivity curves are optional; the paper figure shows
 # the NANOGrav free-spectrum violins instead)
 with st.sidebar.expander("PTA Parameters", expanded=False):
     pta_presets = st.multiselect(
         "Select PTAs",
-        [k for k in PTA_PRESETS.keys() if k != 'Custom'],
+        PTA_CURVE_PRESETS,
         default=[]
     )
-    
-    # Custom PTA option
-    show_custom_pta = st.checkbox("Add custom PTA")
-    if show_custom_pta:
-        pta_npsr_custom = st.slider("Number of pulsars", 10, 300, 67)
-        pta_timespan_custom = st.slider("Timespan (years)", 5.0, 30.0, 15.0, step=0.5)
-        pta_sigma_custom = st.select_slider(
-            "Timing precision (ns)", 
-            options=[30, 50, 100, 200, 300, 500, 1000],
-            value=300
-        )
-        pta_cadence_custom = st.slider("Cadence (obs/year)", 12, 52, 26)
-    else:
-        pta_npsr_custom, pta_timespan_custom, pta_sigma_custom, pta_cadence_custom = 67, 15.0, 300, 26
+    st.caption(
+        "NANOGrav 15yr is the official real-noise sensitivity curve "
+        "(Zenodo 10.5281/zenodo.8092346). Other arrays' curves await "
+        "public real-noise products."
+    )
 
 selected_pops = st.sidebar.multiselect(
     "Select populations",
@@ -837,21 +755,11 @@ if show_ptas:
         'PPTA DR3': {'color': '#4DAF4A', 'ls': ':'},           # green, dotted
         'MPTA': {'color': '#984EA3', 'ls': '--'},              # purple, dashed
         'CPTA': {'color': '#FF7F00', 'ls': '-.'},              # orange, dash-dot
-        'IPTA DR3 (proj.)': {'color': '#A65628', 'ls': ':'},   # brown, dotted
-        'SKA-era': {'color': '#F781BF', 'ls': '--'},           # pink, dashed
-        'Custom': {'color': '#999999', 'ls': ':'},             # gray, dotted
     }
     
-    # Plot each selected PTA
+    # Plot each selected PTA (curves from the pinned data products)
     for i, pta_name in enumerate(pta_presets):
-        preset = PTA_PRESETS[pta_name]
-        pta_freqs, pta_omega = get_pta_sensitivity_analytic(
-            n_pulsars=preset['n_pulsars'],
-            timespan=preset['timespan'],
-            sigma_ns=preset['sigma_ns'],
-            cadence=preset['cadence'],
-            preset=pta_name
-        )
+        pta_freqs, pta_omega = get_pta_curve(pta_name)
         mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
         if show_ceiling:
             mask_pta &= pta_omega < omega_cutoff
@@ -860,45 +768,13 @@ if show_ptas:
             plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
             ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta],
                      color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
-            label_text = pta_name.replace(' (proj.)', '*').replace('NANOGrav ', 'NG').replace('yr', '')
-            if not use_hc and pta_name in pta_label_pos_omega:
-                lx, ly, ha_lbl = pta_label_pos_omega[pta_name]
-                ax.text(lx, ly, label_text, fontsize=9, color=style['color'],
-                        ha=ha_lbl, va='center', fontweight='bold')
-            else:
-                min_idx = np.argmin(plot_pta[mask_pta])
-                label_x = pta_freqs[mask_pta][min_idx]
-                label_y = plot_pta[mask_pta][min_idx] * (3 if use_hc else 0.3)
-                va = 'bottom' if use_hc else 'top'
-                ax.text(label_x, label_y, label_text, fontsize=9, color=style['color'],
-                        ha='center', va=va, fontweight='bold')
-    
-    # Custom PTA if enabled
-    if show_custom_pta:
-        pta_freqs, pta_omega = get_pta_sensitivity_analytic(
-            n_pulsars=pta_npsr_custom,
-            timespan=pta_timespan_custom,
-            sigma_ns=pta_sigma_custom,
-            cadence=pta_cadence_custom,
-            preset='Custom'
-        )
-        mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
-        if show_ceiling:
-            mask_pta &= pta_omega < omega_cutoff
-        if np.any(mask_pta):
-            style = pta_styles['Custom']
-            plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
-            ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta],
-                     color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
+            label_text = pta_name.replace('NANOGrav ', 'NG').replace('yr', '')
             min_idx = np.argmin(plot_pta[mask_pta])
             label_x = pta_freqs[mask_pta][min_idx]
-            if use_hc:
-                label_y = plot_pta[mask_pta][min_idx] * 3
-                va = 'bottom'
-            else:
-                label_y = plot_pta[mask_pta][min_idx] * 0.3
-                va = 'top'
-            ax.text(label_x, label_y, 'Custom', fontsize=10, color=style['color'], ha='center', va=va)
+            label_y = plot_pta[mask_pta][min_idx] * (3 if use_hc else 0.3)
+            va = 'bottom' if use_hc else 'top'
+            ax.text(label_x, label_y, label_text, fontsize=9, color=style['color'],
+                    ha='center', va=va, fontweight='bold', path_effects=LABEL_STROKE)
 
 # DWD foreground (Figure-2 style: thin line, dashed continuation, light fill)
 if show_dwd:
@@ -1178,14 +1054,24 @@ from nearby massive binaries, or mis-modeled pulsar noise).
 # =============================================================================
 # PTA SECTION (moved to bottom)
 # =============================================================================
-if show_ptas and (len(pta_presets) > 0 or show_custom_pta):
+if show_ptas and len(pta_presets) > 0:
     st.markdown("---")
     st.subheader("PTA Sensitivity Curves")
     st.markdown("""
-    PTA sensitivity curves are calibrated to each array's published GWB amplitude at fixed γ=13/3.
-    Projections (IPTA DR3, SKA-era) are scaled from similar existing arrays.
+    The **NANOGrav 15yr** curve is the official full-PTA stochastic-background
+    sensitivity built from the real per-pulsar noise (white noise, the common
+    process, and individual red noise):
+    [Agazie et al. 2023, ApJL 951, L10](https://doi.org/10.3847/2041-8213/acda88),
+    data product [Zenodo 10.5281/zenodo.8092346](https://doi.org/10.5281/zenodo.8092346)
+    (CC-BY-4.0), hash-pinned in `data/pta/`. Because the curve contains the
+    detected common process, it saturates at the background rather than dipping
+    below it — the GWB is irreducible red noise for a PTA.
+
+    Curves for EPTA, PPTA, MPTA, and CPTA are not shown: no public real-noise
+    curve products exist for them (their published amplitudes are in the
+    table below).
     """)
-    
+
     pta_table = """
 | PTA | N_psr | Timespan | σ_RMS | Cadence | A (γ=13/3) | Reference |
 |-----|-------|----------|-------|---------|------------|-----------|
@@ -1194,13 +1080,10 @@ if show_ptas and (len(pta_presets) > 0 or show_custom_pta):
 | PPTA DR3 | 30 | 18 yr | 400 ns | 26/yr | 2.0×10⁻¹⁵ | [Reardon et al. (2023)](https://arxiv.org/abs/2306.16215) |
 | CPTA | 57 | 3.4 yr | 100 ns | 26/yr | 2.0×10⁻¹⁵ | [Xu et al. (2023)](https://arxiv.org/abs/2306.16216) |
 | MPTA | 83 | 4.5 yr | 200 ns | 26/yr | 4.8×10⁻¹⁵ | [Miles et al. (2025)](https://arxiv.org/abs/2412.01153) |
-| IPTA DR3 (proj.) | ~115 | 25 yr | 200 ns | 26/yr | — | ~2.5×: h_c ∝ 1/√(N_pairs × T) |
-| SKA-era | 200 | 20 yr | 50 ns | 52/yr | — | [Shannon et al. (2025)](https://arxiv.org/abs/2512.16163) |
 """
     st.markdown(pta_table)
     st.caption("All amplitudes A are at **fixed γ=13/3** (α=-2/3). NANOGrav uses the revised customized-chromatic-noise (CNM) amplitude. σ_RMS values are approximate array-averaged timing precisions.")
-    st.caption("IPTA DR3 scaling: h_c ∝ 1/√(N_pairs × T), where N_pairs = N(N-1)/2, see e.g. Siemens et al. (2013). With ~115 pulsars (6555 pairs vs NANOGrav's 2211) and 25-year baseline, improvement ≈ √(3.0 × 1.7) ≈ 2.2×, and with additional gains from combined noise modeling 2.5x is reasonable..")
-    st.caption("PTA sensitivity curves use the formalism of [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341), implemented in [hasasia](https://github.com/Hazboun6/hasasia).")
+    st.caption("Sensitivity-curve formalism: [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341), implemented in [hasasia](https://github.com/Hazboun6/hasasia).")
 
 # =============================================================================
 # CITATION
