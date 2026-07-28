@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import matplotlib.patheffects as path_effects
 from matplotlib.ticker import LogLocator, FixedLocator, FuncFormatter, NullFormatter
 import hashlib
@@ -148,16 +149,6 @@ POPULATIONS = {
     },
 }
 
-# Tuned label positions for Omega_gw mode
-labels_pos_omega = {
-    'SMBHB': (1e-8, 1e-11),
-    'AGN-IMRI': (4.6e-2, 1.5e-10),
-    'EMRI': (1e-5, 3e-13),
-    'Pop III': (12, 3e-11),
-    'BNS': (40, 5e-12),
-    'Stellar BBH': (150, 7e-10)
-}
-
 # Tuned label positions for h_c mode (carefully positioned to avoid overlaps)
 labels_pos_hc = {
     'SMBHB': (3e-9, 8e-15),
@@ -168,26 +159,71 @@ labels_pos_hc = {
     'Stellar BBH': (80, 8e-25)
 }
 
-# Detector label positions for Omega_gw mode
+# Detector label positions for Omega_gw mode (paper Figure-3 placements)
 detector_labels_omega = {
-    'muAres': (1e-6, 2e-14),
-    'BBO': (5e-2, 2e-17),
-    'LISA': (2e-5, 5e-11),
-    'aLIGO': (60, 8e-9),
-    'CE': (30, 3e-15),
+    'muAres': (1.6e-6, 1e-15),
+    'BBO': (1.2e-1, 4e-17),
+    'LISA': (2e-3, 1e-13),
+    'aLIGO': (17, 5.5e-9),
+    'CE': (300, 7e-13),
 }
 
-# Figure-2 visual grammar (matches make_fig2_corrected.py)
+# Paper multiband-figure visual grammar (matches make_fig2_corrected.py)
 CONTEXT_GRAY = '#8A8A8A'
+CONTEXT_LABEL_GRAY = '#666666'
 CONTEXT_ALPHA = 0.38
 BACKGROUND_FILL_ALPHA = 0.10
 PLOT_OMEGA_MIN = 1e-18
 DWD_GRAY = '#696969'
+BUDGET_RED = '#B2182B'
+NANOGRAV_FACE_ALPHA = 0.30
+NANOGRAV_EDGE_ALPHA = 0.58
+DETECTOR_PLOT_MAX = 2.0e-7
+LOW_FREQUENCY_CONTINUATION_DEX = 0.50
+EMRI_MODEL_CUTOFF_HZ = 1.0e-2
+EMRI_HIGH_FREQUENCY_CONTINUATION_DEX = 0.50
+CUMULATIVE_QUANTILES = (0.50, 0.90, 0.99)
 
 WHITE_STROKE = [
     path_effects.Stroke(linewidth=3.0, foreground='white', alpha=0.80),
     path_effects.Normal(),
 ]
+LABEL_STROKE = [
+    path_effects.withStroke(linewidth=2.2, foreground='white', alpha=0.95),
+]
+
+# Audited paper spectra and NANOGrav free-spectrum context (hash-pinned
+# copies of the paper's step3-spectra.npz / step3-figure-context.npz)
+SPECTRA_FILE = Path(__file__).resolve().parent / "data" / "step3-spectra.npz"
+SPECTRA_SHA256 = (
+    "a146133de1e39bb335a1b5900f8d6ad39ea06fde88b19ccbd8fedba173936688"
+)
+PTA_CONTEXT_FILE = (
+    Path(__file__).resolve().parent / "data" / "step3-figure-context.npz"
+)
+PTA_CONTEXT_SHA256 = (
+    "26afed590123475fc82fd0a2a863f8d00665a52cec728f5cc6fdd329e1338e46"
+)
+
+# Population key -> audited spectrum key in step3-spectra.npz
+SPECTRUM_KEYS = {
+    'SMBHB': 'smbhb_benchmark',
+    'AGN-IMRI': 'agn_imri_benchmark',
+    'EMRI': 'emri_benchmark',
+    'BNS': 'bns_benchmark',
+    'Pop III': 'popiii_benchmark',
+    'Stellar BBH': 'bbh_benchmark',
+}
+
+# Declared plot-only low-frequency interpretation boundaries (paper values)
+BENCHMARK_DISPLAY_MINIMUM_HZ = {
+    'smbhb_benchmark': 1.0e-9,
+    'emri_benchmark': 1.0e-5,
+    'agn_imri_benchmark': 1.0e-5,
+    'popiii_benchmark': 1.0e-3,
+    'bbh_benchmark': 3.1622776601683795e-5,
+    'bns_benchmark': 1.0e-3,
+}
 
 # Detector label positions for h_c mode
 detector_labels_hc = {
@@ -384,6 +420,101 @@ def get_dwd_foreground(f_tuple):
     return omega
 
 
+@st.cache_data
+def load_benchmark_spectra():
+    """Load the audited paper spectra (hash-pinned step3-spectra.npz)."""
+    digest = hashlib.sha256(SPECTRA_FILE.read_bytes()).hexdigest()
+    if digest != SPECTRA_SHA256:
+        raise RuntimeError("Benchmark spectra archive hash changed.")
+    with np.load(SPECTRA_FILE) as archive:
+        frequency = np.asarray(archive["frequency_hz"], dtype=float)
+        spectra = {
+            key: np.asarray(archive[key], dtype=float)
+            for key in archive.files
+            if key != "frequency_hz"
+        }
+    return frequency, spectra
+
+
+@st.cache_data
+def load_nanograv_violins():
+    """Load the archived NANOGrav free-spectrum marginal posteriors."""
+    digest = hashlib.sha256(PTA_CONTEXT_FILE.read_bytes()).hexdigest()
+    if digest != PTA_CONTEXT_SHA256:
+        raise RuntimeError("NANOGrav context archive hash changed.")
+    with np.load(PTA_CONTEXT_FILE) as context:
+        center_frequency = np.asarray(context["pta_frequency_hz"], dtype=float)
+        log10_omega = np.asarray(context["pta_log10_omega_grid"], dtype=float)
+        half_width = np.asarray(context["pta_half_width_hz"], dtype=float)
+    return center_frequency, log10_omega, half_width
+
+
+def display_curve(values):
+    """Return a plotting copy that ends cleanly at physical support."""
+    curve = np.where(values > 0.0, values, np.nan).astype(float, copy=True)
+    valid = np.isfinite(curve[:-1]) & np.isfinite(curve[1:])
+    log_step = np.full(curve.size - 1, np.nan)
+    log_step[valid] = np.log10(curve[1:][valid] / curve[:-1][valid])
+    abrupt = np.flatnonzero(log_step < -0.05)
+    if abrupt.size:
+        curve[abrupt[0] + 1:] = np.nan
+    return curve
+
+
+def benchmark_display_curve(frequency, values, spectrum_key):
+    """Apply the declared plot-only low-frequency interpretation boundary."""
+    curve = display_curve(values)
+    curve[frequency < BENCHMARK_DISPLAY_MINIMUM_HZ[spectrum_key]] = np.nan
+    return curve
+
+
+def benchmark_continuation_curve(frequency, values, spectrum_key):
+    """Show a half-decade analytic continuation below the solid boundary."""
+    curve = display_curve(values)
+    solid_minimum = BENCHMARK_DISPLAY_MINIMUM_HZ[spectrum_key]
+    continuation_minimum = solid_minimum * 10.0 ** (
+        -LOW_FREQUENCY_CONTINUATION_DEX
+    )
+    support = (frequency >= continuation_minimum) & (frequency <= solid_minimum)
+    curve[~support] = np.nan
+    return curve
+
+
+def emri_high_frequency_continuation(frequency, values):
+    """Continue the EMRI inspiral power law above its declared model cutoff."""
+    f = np.asarray(frequency, dtype=float)
+    omega = np.asarray(values, dtype=float)
+    anchor_support = (
+        (f > 0.0) & (f <= EMRI_MODEL_CUTOFF_HZ)
+        & np.isfinite(omega) & (omega > 0.0)
+    )
+    anchor_index = int(np.flatnonzero(anchor_support)[-1])
+    anchor_omega = omega[anchor_index] * (
+        EMRI_MODEL_CUTOFF_HZ / f[anchor_index]
+    ) ** (2.0 / 3.0)
+    continuation_frequency = np.geomspace(
+        EMRI_MODEL_CUTOFF_HZ,
+        EMRI_MODEL_CUTOFF_HZ * 10.0**EMRI_HIGH_FREQUENCY_CONTINUATION_DEX,
+        120,
+    )
+    continuation_omega = anchor_omega * (
+        continuation_frequency / EMRI_MODEL_CUTOFF_HZ
+    ) ** (2.0 / 3.0)
+    return continuation_frequency, continuation_omega
+
+
+def cumulative_budget_fraction(frequency, omega_sum):
+    """Cumulative fraction of the integrated budget, Int Omega dlnf below f."""
+    lnf = np.log(frequency)
+    contributions = np.zeros_like(omega_sum)
+    contributions[1:] = (
+        0.5 * (omega_sum[1:] + omega_sum[:-1]) * np.diff(lnf)
+    )
+    cumulative = np.cumsum(contributions)
+    total = cumulative[-1]
+    return cumulative / total, total
+
+
 def scale_amplitude(A_bench, reservoir, rho_smbh, rho_stellar, rho_nsc):
     """Scale amplitude based on reservoir density relative to fiducial."""
     if reservoir == 'SMBH':
@@ -393,6 +524,17 @@ def scale_amplitude(A_bench, reservoir, rho_smbh, rho_stellar, rho_nsc):
     elif reservoir == 'NSC':
         return A_bench * np.sqrt(rho_nsc / RHO_NSC_FID)
     return A_bench
+
+
+def reservoir_ratio(reservoir, rho_smbh, rho_stellar, rho_nsc):
+    """Linear Omega scaling of a channel with its reservoir density."""
+    if reservoir == 'SMBH':
+        return rho_smbh / RHO_SMBH_FID
+    elif reservoir == 'STELLAR':
+        return rho_stellar / RHO_STELLAR_FID
+    elif reservoir == 'NSC':
+        return rho_nsc / RHO_NSC_FID
+    return 1.0
 
 
 @st.cache_data
@@ -547,7 +689,8 @@ st.sidebar.header("Display Options")
 # y_axis_unit = st.sidebar.radio("Y-axis", ["Ω_gw", "h_c (characteristic strain)"], index=0, horizontal=True)
 y_axis_unit = "Ω_gw"  # Fixed to Omega_gw for now
 show_dwd = st.sidebar.checkbox("Show DWD foreground", value=True)
-show_ceiling = st.sidebar.checkbox("Show integrated ceiling", value=True)
+show_nanograv = st.sidebar.checkbox("Show NANOGrav free-spectrum", value=True)
+show_ceiling = st.sidebar.checkbox("Show integrated benchmark strip", value=True)
 
 # Individual detector toggles
 with st.sidebar.expander("Detectors", expanded=True):
@@ -577,12 +720,13 @@ PTA_PRESETS = {
     'Custom': None
 }
 
-# PTA parameters
-with st.sidebar.expander("PTA Parameters", expanded=True):
+# PTA parameters (sensitivity curves are optional; the paper figure shows
+# the NANOGrav free-spectrum violins instead)
+with st.sidebar.expander("PTA Parameters", expanded=False):
     pta_presets = st.multiselect(
-        "Select PTAs", 
+        "Select PTAs",
         [k for k in PTA_PRESETS.keys() if k != 'Custom'],
-        default=['NANOGrav 15yr']
+        default=[]
     )
     
     # Custom PTA option
@@ -609,27 +753,34 @@ selected_pops = st.sidebar.multiselect(
 # MAIN FIGURE
 # =============================================================================
 
-# Create figure
-fig, ax = plt.subplots(figsize=(14, 7))
+# Set axis based on y-axis unit choice
+use_hc = (y_axis_unit == "h_c (characteristic strain)")
+
+# Create figure (with the cumulative benchmark strip below, as in the paper)
+show_budget_strip = show_ceiling and not use_hc
+if show_budget_strip:
+    fig, (ax, ax_budget) = plt.subplots(
+        2, 1, figsize=(14, 8.2), sharex=True,
+        gridspec_kw={'height_ratios': (4.0, 0.75), 'hspace': 0.04},
+    )
+else:
+    fig, ax = plt.subplots(figsize=(14, 7))
+    ax_budget = None
 fig.patch.set_facecolor('white')
 
 f_grid = F_GRID  # Use pre-computed grid
 f_grid_tuple = tuple(f_grid)  # For caching
-omega_cutoff = INTEGRATED_BUDGET_OMEGA
+omega_cutoff = DETECTOR_PLOT_MAX
 
-# Set axis based on y-axis unit choice
-use_hc = (y_axis_unit == "h_c (characteristic strain)")
-
-ax.set_xlim(1e-9, 3e3)
+ax.set_xlim(10.0**-9.5, 3e3)
 if use_hc:
     ax.set_ylim(1e-26, 1e-12)
-    ax.set_ylabel('Characteristic Strain hc(f)', fontsize=14)
+    ax.set_ylabel(r'$h_c(f)$', fontsize=14)
 else:
     ax.set_ylim(1e-18, 1e-6)
-    ax.set_ylabel('\u03A9gw(f)', fontsize=14)
+    ax.set_ylabel(r'$\Omega_{\mathrm{gw}}(f)$', fontsize=14)
 ax.set_xscale('log')
 ax.set_yscale('log')
-ax.set_xlabel('Frequency f [Hz]', fontsize=14)
 
 # NOTE: tick locators and formatters are set after all loglog() calls,
 # right before tight_layout(), because loglog() resets them.
@@ -643,7 +794,7 @@ if show_muares:
     plot_mu = omega_to_hc(f_grid, muares) if use_hc else muares
     ax.loglog(f_grid[mask_mu], plot_mu[mask_mu], color=CONTEXT_GRAY, ls='-.', alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['muAres']
-    ax.text(lx, ly, '\u03bcAres ({0}yr)'.format(muares_obs_years), fontsize=10, color='gray', ha='left')
+    ax.text(lx, ly, '\u03bcAres ({0}yr)'.format(muares_obs_years), fontsize=10, color=CONTEXT_LABEL_GRAY, path_effects=LABEL_STROKE, ha='left')
 
 if show_bbo:
     bbo = get_bbo_sensitivity(f_grid_tuple, T_yrs=float(bbo_obs_years))
@@ -651,7 +802,7 @@ if show_bbo:
     plot_bbo = omega_to_hc(f_grid, bbo) if use_hc else bbo
     ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color=CONTEXT_GRAY, ls='-', alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['BBO']
-    ax.text(lx, ly, f'BBO ({bbo_obs_years}yr)', fontsize=10, color='gray', ha='center')
+    ax.text(lx, ly, f'BBO ({bbo_obs_years}yr)', fontsize=10, color=CONTEXT_LABEL_GRAY, path_effects=LABEL_STROKE, ha='center')
 
 if show_lisa:
     lisa = get_lisa_sensitivity(f_grid_tuple, T_yrs=float(lisa_obs_years))
@@ -659,7 +810,7 @@ if show_lisa:
     plot_lisa = omega_to_hc(f_grid, lisa) if use_hc else lisa
     ax.loglog(f_grid[mask_lisa], plot_lisa[mask_lisa], color=CONTEXT_GRAY, ls='--', alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['LISA']
-    ax.text(lx, ly, f'LISA ({lisa_obs_years}yr)', fontsize=10, color='gray', ha='center')
+    ax.text(lx, ly, f'LISA ({lisa_obs_years}yr)', fontsize=10, color=CONTEXT_LABEL_GRAY, path_effects=LABEL_STROKE, ha='center')
 
 if show_aligo:
     aligo = get_aligo_design_pi(f_grid_tuple)
@@ -667,7 +818,7 @@ if show_aligo:
     plot_aligo = omega_to_hc(f_grid, aligo) if use_hc else aligo
     ax.loglog(f_grid[mask_aligo], plot_aligo[mask_aligo], color=CONTEXT_GRAY, ls=(0, (5.0, 2.0)), alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['aLIGO']
-    ax.text(lx, ly, 'aLIGO design', fontsize=10, color='gray', ha='center')
+    ax.text(lx, ly, 'aLIGO design', fontsize=10, color=CONTEXT_LABEL_GRAY, path_effects=LABEL_STROKE, ha='center')
 
 if show_ce:
     ce = get_ce_sensitivity(f_grid_tuple, T_yrs=float(ce_obs_years))
@@ -675,7 +826,7 @@ if show_ce:
     plot_ce = omega_to_hc(f_grid, ce) if use_hc else ce
     ax.loglog(f_grid[mask_ce], plot_ce[mask_ce], color=CONTEXT_GRAY, ls=':', alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['CE']
-    ax.text(lx, ly, f'CE ({ce_obs_years}yr)', fontsize=10, color='gray', ha='center')
+    ax.text(lx, ly, f'CE ({ce_obs_years}yr)', fontsize=10, color=CONTEXT_LABEL_GRAY, path_effects=LABEL_STROKE, ha='center')
 
 # PTA sensitivity curves
 if show_ptas:
@@ -766,51 +917,127 @@ if show_dwd:
             ax.loglog(f_grid[solid_wd], omega_wd[solid_wd], color=DWD_GRAY, alpha=0.72, lw=1.2, zorder=2)
             ax.loglog(f_grid[cont_wd], omega_wd[cont_wd], color=DWD_GRAY, ls=(0, (3.0, 2.0)), alpha=0.66, lw=1.1, zorder=2)
             ax.fill_between(f_grid[fill_wd], PLOT_OMEGA_MIN, omega_wd[fill_wd], color=DWD_GRAY, alpha=BACKGROUND_FILL_ALPHA, linewidth=0, zorder=1)
-            ax.text(7e-4, 3e-10, 'Galactic DWD', fontsize=11, color='dimgray', ha='center', fontweight='bold')
+            ax.text(5.5e-4, 1.65e-10, 'Galactic DWD', fontsize=11, color='#5F5F5F',
+                    ha='center', va='bottom', fontweight='bold', path_effects=LABEL_STROKE)
 
-# Integrated benchmark budget (step3b conditional sum, not a universal ceiling)
-if show_ceiling:
-    if use_hc:
-        # In h_c space, the budget line is frequency-dependent
-        f_ceil = np.logspace(-9, 3, 100)
-        hc_ceil = omega_to_hc(f_ceil, np.full_like(f_ceil, INTEGRATED_BUDGET_OMEGA))
-        ax.loglog(f_ceil, hc_ceil, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-        ax.text(1e-1, 3e-17, 'Integrated Benchmark Budget', color='red', fontsize=12, fontweight='bold', ha='center')
-    else:
-        ax.axhline(y=INTEGRATED_BUDGET_OMEGA, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-        ax.text(1e-3, 1.8 * INTEGRATED_BUDGET_OMEGA, 'Integrated Benchmark Budget', color='red', fontsize=14, fontweight='bold', ha='center')
+# NANOGrav free-spectrum marginal posteriors (violins, as in the paper)
+if show_nanograv and not use_hc:
+    ng_centers, ng_log10_omega, ng_half_width = load_nanograv_violins()
+    for center, log10_omega, half_width in zip(ng_centers, ng_log10_omega, ng_half_width):
+        omega_grid = 10.0**log10_omega
+        ax.fill_betweenx(
+            omega_grid,
+            center - half_width,
+            center + half_width,
+            facecolor=mcolors.to_rgba(CONTEXT_GRAY, NANOGRAV_FACE_ALPHA),
+            edgecolor=mcolors.to_rgba(CONTEXT_GRAY, NANOGRAV_EDGE_ALPHA),
+            linewidth=0.40,
+            zorder=12,
+        )
+    ax.text(1.45e-9, 2.5e-7, 'NANOGrav', color=CONTEXT_LABEL_GRAY,
+            fontsize=11, ha='left', va='bottom', fontweight='bold',
+            path_effects=LABEL_STROKE, zorder=13)
 
-# Populations
-# Select label positions based on display mode
-pop_labels = labels_pos_hc if use_hc else labels_pos_omega
+# Populations: audited paper spectra, scaled linearly with reservoir density
+spec_f, spec_curves = load_benchmark_spectra()
+scaled_selected_sum = np.zeros_like(spec_f)
+
+
+def label_curve(curve, x_value, label, offset, color, horizontal='center', vertical='center'):
+    """Annotate a spectrum at x_value with an offset-points label (paper style)."""
+    finite = np.isfinite(curve)
+    y_value = 10.0 ** np.interp(
+        np.log10(x_value),
+        np.log10(spec_f[finite]),
+        np.log10(curve[finite]),
+    )
+    ax.annotate(
+        label, xy=(x_value, y_value), xytext=offset,
+        textcoords='offset points', color=color, fontsize=13,
+        fontweight='bold', ha=horizontal, va=vertical,
+        path_effects=LABEL_STROKE, annotation_clip=False, zorder=9,
+    )
+
+
+# (x anchor, label text, offset points, ha, va) — paper Figure-3 placements
+POP_LABEL_SPECS = {
+    'SMBHB': (5.0e-8, 'SMBHBs', (0, -20), 'center', 'top'),
+    'EMRI': (2.0e-3, 'EMRI', (-10, -16), 'right', 'top'),
+    'AGN-IMRI': (1.5e-2, 'IMRI', (2, 13), 'center', 'bottom'),
+    'Pop III': (2.0, 'POPIII', (-4, -16), 'right', 'top'),
+    'Stellar BBH': (70.0, 'sBBHs', (0, 13), 'center', 'bottom'),
+    'BNS': (300.0, 'BNS', (12, -2), 'left', 'center'),
+}
 
 for name in selected_pops:
     params = POPULATIONS[name]
-    A_current = scale_amplitude(params['A_bench'], params['reservoir'], rho_smbh, rho_stellar, rho_nsc)
-    omega = get_omega_gw(f_grid, A_current, params['f_ref'], params['f_min'], params['f_max'])
-    valid = omega > 1e-30
-    if np.any(valid):
-        if use_hc:
-            hc_pop = omega_to_hc(f_grid, omega)
-            (pop_line,) = ax.loglog(f_grid[valid], hc_pop[valid], color=params['color'], lw=2.05, alpha=0.98, zorder=5)
-            pop_line.set_path_effects(WHITE_STROKE)
-            ax.fill_between(f_grid[valid], 1e-26, hc_pop[valid], color=params['color'], alpha=BACKGROUND_FILL_ALPHA, linewidth=0, zorder=1)
-        else:
-            (pop_line,) = ax.loglog(f_grid[valid], omega[valid], color=params['color'], lw=2.05, alpha=0.98, zorder=5)
-            pop_line.set_path_effects(WHITE_STROKE)
-            ax.fill_between(f_grid[valid], PLOT_OMEGA_MIN, omega[valid], color=params['color'], alpha=BACKGROUND_FILL_ALPHA, linewidth=0, zorder=1)
-        lx, ly = pop_labels.get(name, (1e-4, 1e-15))
-        display_name = display_names.get(name, name)
-        # Different alignment for h_c mode vs omega mode
-        if use_hc:
-            ha = 'left'
-            va = 'bottom'
-            fontsize = 14
-        else:
-            ha = 'right' if name == 'EMRI' else ('left' if name == 'AGN-IMRI' else 'center')
-            va = 'bottom' if name == 'EMRI' else 'center'
-            fontsize = 16
-        ax.text(lx, ly, display_name, fontsize=fontsize, color=params['color'], fontweight='bold', ha=ha, va=va)
+    key = SPECTRUM_KEYS[name]
+    ratio = reservoir_ratio(params['reservoir'], rho_smbh, rho_stellar, rho_nsc)
+    omega_spec = spec_curves[key] * ratio
+    scaled_selected_sum += omega_spec
+
+    curve = benchmark_display_curve(spec_f, omega_spec, key)
+    continuation = benchmark_continuation_curve(spec_f, omega_spec, key)
+    plot_curve = omega_to_hc(spec_f, curve) if use_hc else curve
+    plot_cont = omega_to_hc(spec_f, continuation) if use_hc else continuation
+    floor = 1e-26 if use_hc else PLOT_OMEGA_MIN
+
+    ax.loglog(spec_f, plot_cont, color=params['color'],
+              linestyle=(0, (3.0, 2.0)), lw=1.45, alpha=0.82, zorder=5)
+    fill_curve = np.where(np.isfinite(plot_curve), plot_curve, plot_cont)
+    support = np.isfinite(fill_curve) & (fill_curve >= floor)
+    ax.fill_between(spec_f, floor, fill_curve, where=support,
+                    color=params['color'], alpha=BACKGROUND_FILL_ALPHA,
+                    linewidth=0, zorder=1)
+    (pop_line,) = ax.loglog(spec_f, plot_curve, color=params['color'],
+                            lw=2.05, alpha=0.98, zorder=5)
+    pop_line.set_path_effects(WHITE_STROKE)
+
+    if name == 'EMRI':
+        emri_f, emri_omega = emri_high_frequency_continuation(spec_f, omega_spec)
+        emri_plot = omega_to_hc(emri_f, emri_omega) if use_hc else emri_omega
+        ax.fill_between(emri_f, floor, emri_plot, color=params['color'],
+                        alpha=BACKGROUND_FILL_ALPHA, linewidth=0, zorder=4)
+        ax.loglog(emri_f, emri_plot, color=params['color'],
+                  linestyle=(0, (3.0, 2.0)), lw=1.45, alpha=0.82, zorder=5)
+
+    if not use_hc:
+        x_anchor, text, offset, ha_lbl, va_lbl = POP_LABEL_SPECS[name]
+        label_curve(curve, x_anchor, text, offset, params['color'], ha_lbl, va_lbl)
+    else:
+        lx, ly = labels_pos_hc.get(name, (1e-4, 1e-20))
+        ax.text(lx, ly, display_names.get(name, name), fontsize=14,
+                color=params['color'], fontweight='bold', ha='left', va='bottom')
+
+# Cumulative benchmark strip (paper style)
+if show_budget_strip and np.any(scaled_selected_sum > 0.0):
+    cumulative_fraction, e_comp = cumulative_budget_fraction(spec_f, scaled_selected_sum)
+    ax_budget.fill_between(spec_f, 0.0, cumulative_fraction, color=BUDGET_RED,
+                           alpha=0.08, linewidth=0.0, zorder=1)
+    ax_budget.plot(spec_f, cumulative_fraction, color=BUDGET_RED, lw=1.9, zorder=3)
+    ax_budget.axhline(1.0, color=BUDGET_RED, linestyle=(0, (3.0, 2.0)),
+                      lw=0.8, alpha=0.52, zorder=2)
+    for quantile in CUMULATIVE_QUANTILES:
+        idx = int(np.searchsorted(cumulative_fraction, quantile))
+        idx = min(idx, cumulative_fraction.size - 1)
+        qf = spec_f[idx]
+        ax_budget.axvline(qf, color=CONTEXT_LABEL_GRAY,
+                          linestyle=(0, (1.0, 2.0)), lw=0.8, alpha=0.62, zorder=2)
+        ax_budget.annotate(f"{quantile:.0%}", xy=(qf, 0.055), xytext=(4.0, 0.0),
+                           textcoords='offset points', color=CONTEXT_LABEL_GRAY,
+                           fontsize=9, ha='left', va='bottom', zorder=4)
+    exponent = int(np.floor(np.log10(e_comp)))
+    mantissa = e_comp / 10.0**exponent
+    e_comp_text = (
+        rf"$\mathcal{{E}}_{{\mathrm{{comp}}}} = "
+        rf"{mantissa:.1f} \times 10^{{{exponent}}}$"
+    )
+    ax_budget.text(3e-3, 0.40,
+                   "Integrated benchmark,  " + e_comp_text,
+                   color=BUDGET_RED, fontsize=13, ha='left', va='center')
+    ax_budget.set_ylim(0.0, 1.12)
+    ax_budget.set_ylabel('cumulative\nfraction', fontsize=11)
+    ax_budget.set_xscale('log')
 
 ax.tick_params(axis='both', which='major', labelsize=12, length=6)
 ax.tick_params(axis='both', which='minor', length=3)
@@ -819,17 +1046,25 @@ for spine in ax.spines.values():
     spine.set_linewidth(1.2)
 
 # Set tick locators and formatters AFTER all loglog() calls, because loglog() resets them
-ax.xaxis.set_major_locator(FixedLocator([10**i for i in range(-9, 4)]))
+bottom_ax = ax_budget if ax_budget is not None else ax
+bottom_ax.set_xlabel('Frequency f [Hz]', fontsize=14)
+for axes_obj in ([ax, ax_budget] if ax_budget is not None else [ax]):
+    axes_obj.xaxis.set_major_locator(FixedLocator([10**i for i in range(-9, 4)]))
+    axes_obj.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
+    axes_obj.xaxis.set_major_formatter(FuncFormatter(_log_fmt))
+    axes_obj.xaxis.set_minor_formatter(NullFormatter())
 if use_hc:
     ax.yaxis.set_major_locator(FixedLocator([10**i for i in range(-26, -11)]))
 else:
     ax.yaxis.set_major_locator(FixedLocator([10**i for i in range(-18, -5)]))
-ax.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
-ax.xaxis.set_major_formatter(FuncFormatter(_log_fmt))
 ax.yaxis.set_major_formatter(FuncFormatter(_log_fmt))
-ax.xaxis.set_minor_formatter(NullFormatter())
 ax.yaxis.set_minor_formatter(NullFormatter())
+if ax_budget is not None:
+    ax_budget.set_yticks([0.0, 0.5, 1.0])
+    ax_budget.tick_params(axis='both', which='major', labelsize=12, length=6)
+    for spine in ax_budget.spines.values():
+        spine.set_linewidth(1.2)
 
 plt.tight_layout()
 st.pyplot(fig)
