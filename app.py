@@ -577,7 +577,7 @@ def get_pta_sensitivity_analytic(n_pulsars=67, timespan=15.0, sigma_ns=300, cade
     # (sensitivity ~ 0.8-0.9 × detected amplitude for a ~3-5 sigma detection)
     calibrations = {
         # Detected signals - calibrated to each array's published amplitude at gamma=13/3
-        'NANOGrav 15yr': {'h_c_min': 2.0e-15, 'n': 67, 'T': 15.0, 'sigma': 300, 'cad': 26},  # A=2.4e-15 (Agazie+ 2023)
+        'NANOGrav 15yr': {'h_c_min': 2.0e-15, 'n': 67, 'T': 15.0, 'sigma': 300, 'cad': 26},  # SNM A=2.4e-15 (Agazie+ 2023); revised CNM A=2.1e-15 (Agarwal+ 2026)
         'EPTA DR2': {'h_c_min': 2.1e-15, 'n': 25, 'T': 24.0, 'sigma': 500, 'cad': 20},       # A=2.5e-15 (EPTA+ 2023)
         'PPTA DR3': {'h_c_min': 1.7e-15, 'n': 30, 'T': 18.0, 'sigma': 400, 'cad': 26},       # A=2.0e-15 (Reardon+ 2023)
         'CPTA': {'h_c_min': 1.7e-15, 'n': 57, 'T': 3.4, 'sigma': 100, 'cad': 26},            # A=2.0e-15 (Xu+ 2023, fixed alpha)
@@ -1156,13 +1156,14 @@ function, participating domain M₁ ≥ 10⁸ M☉):**
 
 - One-pass population-moment benchmark: **A_bench = 2.06 × 10⁻¹⁵** at f_ref = 1 yr⁻¹
 - Conditional reference-frequency ceiling: **A_ceil = 2.23 × 10⁻¹⁵**
-- NANOGrav customized-noise (CNM) amplitude: 2.1 (range 1.6–2.7) × 10⁻¹⁵
+- NANOGrav revised customized-noise (CNM) amplitude: **2.1 (90%: 1.6–2.7) × 10⁻¹⁵**
+  ([Larsen et al. 2026](https://arxiv.org/abs/2606.28571); [Agarwal et al. 2026](https://arxiv.org/abs/2606.28554))
 
 | PTA | A (×10⁻¹⁵) at γ=13/3 | A / A_bench |
 |-----|------------|------------------------|
 | CPTA | 2.0 +0.9/-1.9 dex (95%) | 0.97 |
 | PPTA DR3 | 2.04 ± 0.24 | 0.99 |
-| NANOGrav 15yr | 2.4 +0.7/-0.6 | 1.17 |
+| NANOGrav 15yr (CNM) | 2.1 (90%: 1.6–2.7) | 1.02 |
 | EPTA DR2 | 2.5 ± 0.7 | 1.22 |
 | MPTA | 4.8 +0.8/-0.9 | 2.33 |
 
@@ -1188,7 +1189,7 @@ if show_ptas and (len(pta_presets) > 0 or show_custom_pta):
     pta_table = """
 | PTA | N_psr | Timespan | σ_RMS | Cadence | A (γ=13/3) | Reference |
 |-----|-------|----------|-------|---------|------------|-----------|
-| NANOGrav 15yr | 67 | 15 yr | 300 ns | 26/yr | 2.4×10⁻¹⁵ | [Agazie et al. (2023)](https://arxiv.org/abs/2306.16213) |
+| NANOGrav 15yr | 67 | 15 yr | 300 ns | 26/yr | 2.1×10⁻¹⁵ (CNM) | [Agazie et al. (2023)](https://arxiv.org/abs/2306.16213); [Agarwal et al. (2026)](https://arxiv.org/abs/2606.28554) |
 | EPTA DR2 | 25 | 24 yr | 500 ns | 20/yr | 2.5×10⁻¹⁵ | [EPTA Collab. (2023)](https://arxiv.org/abs/2306.16214) |
 | PPTA DR3 | 30 | 18 yr | 400 ns | 26/yr | 2.0×10⁻¹⁵ | [Reardon et al. (2023)](https://arxiv.org/abs/2306.16215) |
 | CPTA | 57 | 3.4 yr | 100 ns | 26/yr | 2.0×10⁻¹⁵ | [Xu et al. (2023)](https://arxiv.org/abs/2306.16216) |
@@ -1197,7 +1198,7 @@ if show_ptas and (len(pta_presets) > 0 or show_custom_pta):
 | SKA-era | 200 | 20 yr | 50 ns | 52/yr | — | [Shannon et al. (2025)](https://arxiv.org/abs/2512.16163) |
 """
     st.markdown(pta_table)
-    st.caption("All amplitudes A are at **fixed γ=13/3** (α=-2/3). σ_RMS values are approximate array-averaged timing precisions.")
+    st.caption("All amplitudes A are at **fixed γ=13/3** (α=-2/3). NANOGrav uses the revised customized-chromatic-noise (CNM) amplitude. σ_RMS values are approximate array-averaged timing precisions.")
     st.caption("IPTA DR3 scaling: h_c ∝ 1/√(N_pairs × T), where N_pairs = N(N-1)/2, see e.g. Siemens et al. (2013). With ~115 pulsars (6555 pairs vs NANOGrav's 2211) and 25-year baseline, improvement ≈ √(3.0 × 1.7) ≈ 2.2×, and with additional gains from combined noise modeling 2.5x is reasonable..")
     st.caption("PTA sensitivity curves use the formalism of [Hazboun, Romano & Smith (2019)](https://arxiv.org/abs/1907.04341), implemented in [hasasia](https://github.com/Hazboun6/hasasia).")
 
