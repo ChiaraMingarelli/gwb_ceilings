@@ -689,7 +689,7 @@ st.sidebar.header("Display Options")
 # y_axis_unit = st.sidebar.radio("Y-axis", ["Ω_gw", "h_c (characteristic strain)"], index=0, horizontal=True)
 y_axis_unit = "Ω_gw"  # Fixed to Omega_gw for now
 show_dwd = st.sidebar.checkbox("Show DWD foreground", value=True)
-show_nanograv = st.sidebar.checkbox("Show NANOGrav free-spectrum", value=True)
+show_nanograv = st.sidebar.checkbox("Show NANOGrav violins (free-spectrum)", value=True)
 show_ceiling = st.sidebar.checkbox("Show integrated benchmark strip", value=True)
 
 # Individual detector toggles
