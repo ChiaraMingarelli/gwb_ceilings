@@ -2,7 +2,9 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import LogLocator, FixedLocator, FuncFormatter, NullFormatter
+import hashlib
 import io
+from pathlib import Path
 
 # Unicode superscript map for tick labels (avoids mathtext parser entirely)
 _SUP = str.maketrans('-0123456789', '⁻⁰¹²³⁴⁵⁶⁷⁸⁹')
@@ -30,84 +32,117 @@ def _log_fmt(x, pos):
 # If you use figures from this tool, please cite:
 #   Mingarelli, C. M. F. (2026), arXiv:2601.18859
 #   https://arxiv.org/abs/2601.18859
+#
+# All conventions, benchmark amplitudes, and detector curves are synchronized
+# with the paper's verification suite (verify_ceilings.py, step3-numbers.json,
+# make_fig2_corrected.py).  Omega_gw(f) = (2 pi^2 / 3 H0^2) f^3 S_h(f)
+# throughout; detector curves are single-natural-log-bin, SNR-one orientation
+# curves, Omega_n(f)/sqrt(T f).  Official detector data products are
+# hash-pinned in data/detectors/ (see the README there for provenance).
 # =============================================================================
 
-# Physical Constants
+# Physical Constants (synchronized with verify_ceilings.py)
 H0_km_s_Mpc = 67.4
-H0 = H0_km_s_Mpc * 1000.0 / 3.08567758e22
+MPC_SI = 3.0856775814913673e22
+H0 = H0_km_s_Mpc * 1000.0 / MPC_SI
 h = H0_km_s_Mpc / 100.0
+YR_SI = 365.25 * 86_400.0
+F_YR = 1.0 / YR_SI  # 1 yr^-1 in Hz
+
+# Hash-pinned official detector data products (see data/detectors/README.md)
+DATA_DIR = Path(__file__).resolve().parent / "data" / "detectors"
+ALIGO_DESIGN_PI = DATA_DIR / "Figures_3_and_4_PICurve_Design.dat"
+ALIGO_DESIGN_PI_SHA256 = (
+    "7d32bbf49db02a653da043266c74efce7761490c978b9f1e1ae92d06711f5ef4"
+)
+BBO_PLIS = DATA_DIR / "BBO_PLIS_Schmitz2021.dat"
+BBO_PLIS_SHA256 = (
+    "e2a005bc0d57090c7dea355f4fd3e869d1da31cab011488cf8d29991a91b61ae"
+)
+CE_40KM_STRAIN = DATA_DIR / "cosmic_explorer_strain_T2000017-v9.txt"
+CE_40KM_STRAIN_SHA256 = (
+    "ebc9145dc9079b9f8839730ba8ce6642dc25542b1fe63c22db90982abf61c29c"
+)
 
 # Pre-compute frequency grid (reduced from 3000 to 1000 points for speed)
 F_GRID = np.logspace(-9.5, 3.5, 1000)
 
-# Fiducial reservoir densities (Msun/Mpc^3)
-# SMBH density updated to Liepold & Ma (2024) value
+# Fiducial reservoir densities (Msun/Mpc^3), step3-numbers.json constants
 RHO_SMBH_FID = 1.8e6  # Liepold & Ma (2024), ApJL 971, L29
-RHO_STELLAR_FID = 5.9e8
-RHO_NSC_FID = 1.4e6
+RHO_STELLAR_FID = 630372082.0092556  # 5e-3 x rho_crit
+RHO_NSC_FID = 630372.0820092556  # ETA_NSC_FIDUCIAL = 1e-3 x rho_star
 
-# Population parameters from Table I
-# SMBHB A_bench updated for L&M (2024) density: A = 1.6e-15 at f_ref = 1/yr
-# IMBH-SMBH A_bench scaled by sqrt(1.8e6/4.2e5) = 2.07
+# Integrated benchmark energy budget (step3b): the conditional sum of the
+# declared benchmark source-event spectra, Sum_i Omega_i dlnf.  Not a
+# universal ceiling, jointly inferred population, or baryonic wall.
+INTEGRATED_BUDGET_OMEGA = 1.3907155534322894e-07
+
+# Declared benchmark channels, anchored to the paper's audited scalars
+# (step3-numbers.json).  A_bench is the characteristic strain h_c at f_ref;
+# each band is drawn as the f^{-2/3} inspiral law over [f_min, f_max].  For
+# the phenomenological-shape channels (Pop III, Stellar BBH) f_max is set at
+# the audited spectral peak so the power-law band ends where the true
+# spectrum turns over.  rho_src is the processed source density
+# rho_src = f_merge * rho_res for the table below.
 POPULATIONS = {
     'SMBHB': {
         'reservoir': 'SMBH',
-        'f_ref': 3.2e-8,
-        'A_bench': 1.6e-15,  # Updated for L&M (2024)
+        'f_ref': F_YR,
+        'A_bench': 2.0572436926091547e-15,  # benchmark_A_1yr, M1 >= 1e8 Msun
         'f_min': 1e-9,
         'f_max': 4e-7,
-        'f_merge_fid': 0.1,
-        'epsilon_gw': 0.02,
+        'epsilon_gw': None,  # one-pass population moment, not eps*rho
+        'rho_src': 1225283.3222939118,  # participating mass density
         'color': '#0072B2',
     },
-    'IMBH-SMBH': {
+    'AGN-IMRI': {
         'reservoir': 'SMBH',
         'f_ref': 3e-3,
-        'A_bench': 2.3e-20,  # Scaled from 1.1e-20 by sqrt(1.8e6/4.2e5)
+        'A_bench': 1.337115866150623e-21,  # agn_imri_benchmark
         'f_min': 1e-5,
         'f_max': 4e-2,
-        'f_merge_fid': 0.05,
         'epsilon_gw': 0.05,
+        'rho_src': 540.0,
         'color': '#D55E00',
     },
     'EMRI': {
         'reservoir': 'NSC',
         'f_ref': 1e-2,
-        'A_bench': 1.1e-20,
+        'A_bench': 3.4763979324143e-22,  # emri_benchmark
         'f_min': 1e-5,
         'f_max': 1e-2,
-        'f_merge_fid': 0.1,
         'epsilon_gw': 0.05,
+        'rho_src': 63.03720820092557,
         'color': '#009E73',
     },
     'BNS': {
         'reservoir': 'STELLAR',
         'f_ref': 0.1,
-        'A_bench': 6.7e-24,
-        'f_min': 1e-2,
+        'A_bench': 4.277390831170633e-24,  # bns_benchmark
+        'f_min': 1e-3,
         'f_max': 1500.0,
-        'f_merge_fid': 1.1e-5,
-        'epsilon_gw': 0.01,
+        'epsilon_gw': 0.02,
+        'rho_src': 1660.4,
         'color': '#CC79A7',
     },
     'Pop III': {
         'reservoir': 'STELLAR',
         'f_ref': 0.1,
-        'A_bench': 4.9e-24,
-        'f_min': 1e-2,
-        'f_max': 200.0,
-        'f_merge_fid': 3.0e-7,
+        'A_bench': 6.803213932893254e-24,  # popiii_benchmark
+        'f_min': 1e-3,
+        'f_max': 15.4,  # audited spectral peak (phenomb shape)
         'epsilon_gw': 0.05,
+        'rho_src': 733.2211228627597,
         'color': '#56B4E9',
     },
     'Stellar BBH': {
         'reservoir': 'STELLAR',
         'f_ref': 25.0,
-        'A_bench': 9.5e-25,
-        'f_min': 5.0,
-        'f_max': 200.0,
-        'f_merge_fid': 1.8e-5,
+        'A_bench': 4.031480337458788e-25,  # bbh_benchmark
+        'f_min': 3.1622776601683795e-5,
+        'f_max': 476.0,  # audited spectral peak (phenomb shape)
         'epsilon_gw': 0.05,
+        'rho_src': 6592.729111209701,
         'color': '#E69F00',
     },
 }
@@ -115,18 +150,18 @@ POPULATIONS = {
 # Tuned label positions for Omega_gw mode
 labels_pos_omega = {
     'SMBHB': (1e-8, 1e-11),
-    'IMBH-SMBH': (4.4e-2, 1e-9),
-    'EMRI': (1e-5, 1e-10 * 10**0.1),
-    'Pop III': (0.1 * 10**0.3, 5e-14 * 10**(-0.6)),
-    'BNS': (1e-1 * 10**0.2, 1e-11 * 10**(-0.5)),
-    'Stellar BBH': (10 * 10**0.3, 3e-15)
+    'AGN-IMRI': (4.4e-2, 4e-11),
+    'EMRI': (1e-5, 3e-13),
+    'Pop III': (1.5, 2e-12),
+    'BNS': (40, 5e-12),
+    'Stellar BBH': (150, 8e-11)
 }
 
 # Tuned label positions for h_c mode (carefully positioned to avoid overlaps)
 labels_pos_hc = {
     'SMBHB': (3e-9, 8e-15),
-    'IMBH-SMBH': (2e-2, 1e-21),
-    'EMRI': (2e-5, 1e-19),
+    'AGN-IMRI': (2e-2, 1e-22),
+    'EMRI': (2e-5, 1e-21),
     'Pop III': (0.05, 8e-25),
     'BNS': (0.5, 3e-24),
     'Stellar BBH': (80, 8e-25)
@@ -134,11 +169,11 @@ labels_pos_hc = {
 
 # Detector label positions for Omega_gw mode
 detector_labels_omega = {
-    'muAres': (1e-6, 1e-11),
+    'muAres': (1e-6, 2e-14),
     'BBO': (5e-2, 2e-17),
-    'LISA': (2e-5, 8e-10),
-    'aLIGO': (280, 6e-9),
-    'CE': (100, 1e-14),
+    'LISA': (2e-5, 5e-11),
+    'aLIGO': (60, 8e-9),
+    'CE': (30, 3e-15),
 }
 
 # Detector label positions for h_c mode
@@ -165,9 +200,9 @@ pta_label_pos_omega = {
 
 display_names = {
     'SMBHB': 'SMBHBs',
-    'IMBH-SMBH': 'IMBH',
+    'AGN-IMRI': 'AGN-IMRI',
     'EMRI': 'EMRI',
-    'Pop III': 'POPIII',
+    'Pop III': 'Pop III',
     'BNS': 'BNS',
     'Stellar BBH': 'sBBHs'
 }
@@ -186,91 +221,153 @@ def get_omega_gw(f, A, f_ref, f_min, f_max):
     return omega
 
 
+# All detector curves below are ported verbatim from the paper's
+# make_fig2_corrected.py (same conventions, same data products).
+
 @st.cache_data
-def get_lisa_sensitivity(f_tuple, T_yrs=10.0):
-    """LISA sensitivity curve in Omega_gw."""
+def get_lisa_sensitivity(f_tuple, T_yrs=4.0):
+    """RCL19 LISA noise in a single-log-bin, SNR-one orientation curve."""
     f = np.array(f_tuple)
     L = 2.5e9
     f_star = 19.09e-3
     P_oms = (1.5e-11)**2 * (1 + (2e-3/f)**4)
     P_acc = (3e-15)**2 * (1 + (0.4e-3/f)**2) * (1 + (f/8e-3)**4)
-    Sn = 10/(3*L**2) * (P_oms + 4*P_acc/((2*np.pi*f)**4) * (1 + 0.6*(f/f_star)**2))
-    omega_n = (4 * np.pi**2 / (3 * H0**2)) * f**3 * Sn
-    T_sec = T_yrs * 365.25 * 24 * 3600
-    return omega_n / np.sqrt(T_sec * f)
+    Sn = (
+        10.0 / (3.0 * L**2)
+        * (P_oms + 4.0 * P_acc / (2.0 * np.pi * f)**4)
+        * (1.0 + 0.6 * (f / f_star)**2)
+    )
+    omega_n = (2.0 * np.pi**2 / (3.0 * H0**2)) * f**3 * Sn
+    return omega_n / np.sqrt(T_yrs * YR_SI * f)
 
 
 @st.cache_data
 def get_muares_sensitivity(f_tuple, T_yrs=10.0):
-    """mu-Ares sensitivity curve in Omega_gw."""
+    """Proposal-based muAres single-log-bin orientation sensitivity.
+
+    Sesana et al. (2021) strawman: 395 Gm arms, 50 pm/rtHz total readout,
+    flat 1e-15 m s^-2/rtHz acceleration noise down to 1e-7 Hz, with the
+    sky-averaged Robson response form.
+    """
     f = np.array(f_tuple)
+    omega = np.full_like(f, np.nan)
+    mask = (f >= 1e-7) & (f <= 1.0)
+    fm = f[mask]
     L = 3.95e11
-    f_star = 3e8 / (2 * np.pi * L)
-    S_pos = 1e-24
-    S_acc = 9e-30 * (1 + (1e-4/f)**2)
-    Sn = (20/3) * (1/L**2) * (4 * S_acc / (2 * np.pi * f)**4 + S_pos) * (1 + (f/f_star)**2)
-    omega_n = (4 * np.pi**2 / (3 * H0**2)) * f**3 * Sn
-    T_sec = T_yrs * 365.25 * 24 * 3600
-    return omega_n / np.sqrt(T_sec * f)
+    f_star = 299_792_458.0 / (2.0 * np.pi * L)
+    S_pos = (50.0e-12)**2
+    S_acc = (1.0e-15)**2
+    Sn = (
+        10.0 / (3.0 * L**2)
+        * (4.0 * S_acc / (2.0 * np.pi * fm)**4 + S_pos)
+        * (1.0 + 0.6 * (fm / f_star)**2)
+    )
+    omega[mask] = (
+        (2.0 * np.pi**2 / (3.0 * H0**2)) * fm**3 * Sn
+        / np.sqrt(T_yrs * YR_SI * fm)
+    )
+    return omega
 
 
 @st.cache_data
 def get_ce_sensitivity(f_tuple, T_yrs=1.0):
-    """Cosmic Explorer approximate sensitivity in Omega_gw."""
+    """Official CE 40-km strain ASD in a single-log-bin orientation curve."""
+    digest = hashlib.sha256(CE_40KM_STRAIN.read_bytes()).hexdigest()
+    if digest != CE_40KM_STRAIN_SHA256:
+        raise RuntimeError("Cosmic Explorer source hash changed.")
+    source = np.loadtxt(CE_40KM_STRAIN)
+    source_frequency = np.asarray(source[:, 0], dtype=float)
+    source_asd = np.asarray(source[:, 1], dtype=float)
+
     f = np.array(f_tuple)
-    omega = np.full_like(f, 1e-1)
-    mask = (f > 5) & (f < 4000)
-    if np.sum(mask) == 0:
-        return omega
-    f_band = f[mask]
-    Sn_proxy = 2e-51 * ((f_band/40)**(-4) + 0.5 + (f_band/200)**2)
-    omega_n = (4 * np.pi**2 / (3 * H0**2)) * f_band**3 * Sn_proxy
-    T_sec = T_yrs * 365.25 * 24 * 3600
-    omega[mask] = omega_n / np.sqrt(T_sec * f_band)
+    omega = np.full_like(f, np.nan)
+    support = (f >= source_frequency[0]) & (f <= source_frequency[-1])
+    fm = f[support]
+    asd = np.exp(
+        np.interp(np.log(fm), np.log(source_frequency), np.log(source_asd))
+    )
+    omega[support] = (
+        (2.0 * np.pi**2 / (3.0 * H0**2)) * fm**3 * asd**2
+        / np.sqrt(T_yrs * YR_SI * fm)
+    )
     return omega
 
 
 @st.cache_data
-def get_aligo_approx(f_tuple):
-    """aLIGO approximate sensitivity in Omega_gw."""
+def get_aligo_design_pi(f_tuple):
+    """Published two-sigma Advanced-LIGO/Virgo design PI sensitivity."""
+    digest = hashlib.sha256(ALIGO_DESIGN_PI.read_bytes()).hexdigest()
+    if digest != ALIGO_DESIGN_PI_SHA256:
+        raise RuntimeError("Advanced-LIGO design PI source hash changed.")
+    design = np.loadtxt(ALIGO_DESIGN_PI)
+    source_frequency = np.asarray(design[:, 0], dtype=float)
+    one_sigma_omega = np.asarray(design[:, 1], dtype=float)
+
     f = np.array(f_tuple)
-    omega = np.full_like(f, 1e-5)
-    mask = (f > 10) & (f < 2000)
-    f_band = f[mask]
-    omega[mask] = 1e-9 * ((f_band/50.0)**(-2) + (f_band/50.0)**3)
+    omega = np.full_like(f, np.nan)
+    support = (f >= source_frequency[0]) & (f <= source_frequency[-1])
+    omega[support] = 2.0 * np.exp(
+        np.interp(
+            np.log(f[support]),
+            np.log(source_frequency),
+            np.log(one_sigma_omega),
+        )
+    )
     return omega
 
 
 @st.cache_data
-def get_bbo_approx(f_tuple, T_yrs=5.0):
-    """BBO approximate sensitivity in Omega_gw."""
+def get_bbo_sensitivity(f_tuple, T_yrs=5.0):
+    """Published BBO SNR-one power-law-integrated curve (Schmitz 2021).
+
+    The source file is the one-year curve; observing time rescales it by
+    1/sqrt(T_yrs).  Converted from h^2 Omega with the manuscript h.
+    """
+    digest = hashlib.sha256(BBO_PLIS.read_bytes()).hexdigest()
+    if digest != BBO_PLIS_SHA256:
+        raise RuntimeError("BBO PLIS source hash changed.")
+    source = np.loadtxt(BBO_PLIS)
+    source_log_frequency = np.asarray(source[:, 0], dtype=float)
+    source_log_h2omega = np.asarray(source[:, 1], dtype=float)
+
     f = np.array(f_tuple)
-    mask = (f > 1e-3) & (f < 100)
-    L_bbo = 5.0e7
-    S_pos, S_acc = 2.0e-34, 9.0e-34
-    f_star = 3.0e8 / (2.0 * np.pi * L_bbo)
-    fm = f[mask]
-    if len(fm) == 0:
-        return np.zeros_like(f)
-    x = fm / f_star
-    Sx = (4.0 * S_pos / L_bbo**2) * (1 + np.cos(x)**2) + (16.0 * S_acc / (L_bbo**2 * (2*np.pi*fm)**4)) * (1 + np.cos(x)**2)
-    T_obs = T_yrs * 365.25 * 24 * 3600
-    omega = np.zeros_like(f)
-    omega[mask] = (2 * np.pi**2 / (3 * H0**2)) * fm**3 * np.sqrt(Sx**2 / (2 * T_obs))
+    omega = np.full_like(f, np.nan)
+    log_frequency = np.full_like(f, np.nan)
+    positive = f > 0.0
+    log_frequency[positive] = np.log10(f[positive])
+    support = (
+        positive
+        & (log_frequency >= source_log_frequency[0])
+        & (log_frequency <= source_log_frequency[-1])
+    )
+    omega[support] = 10.0 ** np.interp(
+        log_frequency[support],
+        source_log_frequency,
+        source_log_h2omega,
+    ) / (h**2 * np.sqrt(T_yrs))
     return omega
 
 
 @st.cache_data
 def get_dwd_foreground(f_tuple):
-    """Double white dwarf foreground in Omega_gw."""
+    """Robson et al. (2019) four-year Galactic-DWD confusion fit."""
     f = np.array(f_tuple)
-    A_wd, f_knee = 3e-10, 3e-3
-    mask = (f > 1e-4) & (f < 2e-2)
+    amplitude = 9.0e-45
+    alpha = 0.138
+    beta = -221.0
+    kappa = 521.0
+    gamma = 1_680.0
+    f_knee = 0.00113
     omega = np.zeros_like(f)
-    if np.sum(mask) == 0:
-        return omega
-    ff = f[mask]
-    omega[mask] = A_wd * (ff / 1e-3)**(2/3) * np.exp(-(ff / f_knee)**2)
+    mask = (f >= 10.0**-5.5) & (f <= 0.1)
+    fm = f[mask]
+    sh = (
+        amplitude
+        * fm**(-7.0 / 3.0)
+        * np.exp(-fm**alpha + beta * fm * np.sin(kappa * fm))
+        * (1.0 + np.tanh(gamma * (f_knee - fm)))
+    )
+    omega[mask] = (2.0 * np.pi**2 / (3.0 * H0**2)) * fm**3 * sh
     return omega
 
 
@@ -396,42 +493,39 @@ If you use figures from this tool, please cite [Mingarelli (2026)](https://arxiv
 st.sidebar.header("Mass Reservoirs")
 st.sidebar.markdown("Adjust reservoir densities (M☉/Mpc³)")
 
-# Initialize session state with fiducial values (updated for L&M 2024)
+# Initialize session state with fiducial values (step3-numbers.json)
 if 'rho_smbh_val' not in st.session_state:
     st.session_state.rho_smbh_val = 1.8  # ×10^6, L&M (2024)
 if 'rho_stellar_val' not in st.session_state:
-    st.session_state.rho_stellar_val = 5.9
+    st.session_state.rho_stellar_val = 6.3  # ×10^8, 5e-3 x rho_crit
 if 'rho_nsc_val' not in st.session_state:
-    st.session_state.rho_nsc_val = 1.4
+    st.session_state.rho_nsc_val = 0.63  # ×10^6, 1e-3 x rho_star
 
 # Reset button
-if st.sidebar.button("Reset to Table I values"):
+if st.sidebar.button("Reset to paper fiducials"):
     st.session_state.rho_smbh_val = 1.8  # L&M (2024)
-    st.session_state.rho_stellar_val = 5.9
-    st.session_state.rho_nsc_val = 1.4
+    st.session_state.rho_stellar_val = 6.3
+    st.session_state.rho_nsc_val = 0.63
     st.rerun()
 
 rho_smbh = st.sidebar.slider(
-    "ρ_SMBH (×10⁶)",  # Changed from ×10⁵ to ×10⁶
+    "ρ_SMBH (×10⁶)",
     min_value=0.5, max_value=5.0,
-    value=st.session_state.rho_smbh_val,
     step=0.1,
     key='rho_smbh_val'
-) * 1e6  # Changed from 1e5 to 1e6
+) * 1e6
 
 rho_stellar = st.sidebar.slider(
     "ρ_★ (×10⁸)",
     min_value=1.0, max_value=10.0,
-    value=st.session_state.rho_stellar_val,
     step=0.1,
     key='rho_stellar_val'
 ) * 1e8
 
 rho_nsc = st.sidebar.slider(
     "ρ_NSC (×10⁶)",
-    min_value=0.5, max_value=5.0,
-    value=st.session_state.rho_nsc_val,
-    step=0.1,
+    min_value=0.1, max_value=5.0,
+    step=0.01,
     key='rho_nsc_val'
 ) * 1e6
 
@@ -451,11 +545,12 @@ with st.sidebar.expander("Detectors", expanded=True):
     show_ce = st.checkbox("Cosmic Explorer", value=True)
     show_ptas = st.checkbox("PTA sensitivity curves", value=True)
 
-# Observation time sliders for space-based detectors
+# Observation time sliders for space-based and next-generation detectors
 with st.sidebar.expander("Detector Observation Times", expanded=False):
     lisa_obs_years = st.slider("LISA (years)", min_value=1, max_value=10, value=4, step=1)
     muares_obs_years = st.slider("muAres (years)", min_value=1, max_value=10, value=10, step=1)
     bbo_obs_years = st.slider("BBO (years)", min_value=1, max_value=10, value=5, step=1)
+    ce_obs_years = st.slider("CE (years)", min_value=1, max_value=10, value=1, step=1)
 
 # PTA presets
 PTA_PRESETS = {
@@ -507,7 +602,7 @@ fig.patch.set_facecolor('white')
 
 f_grid = F_GRID  # Use pre-computed grid
 f_grid_tuple = tuple(f_grid)  # For caching
-omega_cutoff = 1e-7
+omega_cutoff = INTEGRATED_BUDGET_OMEGA
 
 # Set axis based on y-axis unit choice
 use_hc = (y_axis_unit == "h_c (characteristic strain)")
@@ -538,7 +633,7 @@ if show_muares:
     ax.text(lx, ly, '\u03bcAres ({0}yr)'.format(muares_obs_years), fontsize=10, color='gray', ha='left')
 
 if show_bbo:
-    bbo = get_bbo_approx(f_grid_tuple, T_yrs=float(bbo_obs_years))
+    bbo = get_bbo_sensitivity(f_grid_tuple, T_yrs=float(bbo_obs_years))
     mask_bbo = (bbo > 0) & (bbo < omega_cutoff)
     plot_bbo = omega_to_hc(f_grid, bbo) if use_hc else bbo
     ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color='gray', ls='--', alpha=0.6, lw=1.2)
@@ -554,20 +649,20 @@ if show_lisa:
     ax.text(lx, ly, f'LISA ({lisa_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
 if show_aligo:
-    aligo = get_aligo_approx(f_grid_tuple)
+    aligo = get_aligo_design_pi(f_grid_tuple)
     mask_aligo = (aligo < 1e-4) & (aligo < omega_cutoff)
     plot_aligo = omega_to_hc(f_grid, aligo) if use_hc else aligo
     ax.loglog(f_grid[mask_aligo], plot_aligo[mask_aligo], color='gray', ls=':', alpha=0.6, lw=1.2)
     lx, ly = det_labels['aLIGO']
-    ax.text(lx, ly, 'aLIGO', fontsize=10, color='gray', ha='center')
+    ax.text(lx, ly, 'aLIGO design', fontsize=10, color='gray', ha='center')
 
 if show_ce:
-    ce = get_ce_sensitivity(f_grid_tuple, T_yrs=1.0)
+    ce = get_ce_sensitivity(f_grid_tuple, T_yrs=float(ce_obs_years))
     mask_ce = (ce < 1e-4) & (ce < omega_cutoff)
     plot_ce = omega_to_hc(f_grid, ce) if use_hc else ce
     ax.loglog(f_grid[mask_ce], plot_ce[mask_ce], color='gray', ls=':', alpha=0.6, lw=1.2)
     lx, ly = det_labels['CE']
-    ax.text(lx, ly, 'CE', fontsize=10, color='gray', ha='center')
+    ax.text(lx, ly, f'CE ({ce_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
 # PTA sensitivity curves
 if show_ptas:
@@ -652,17 +747,17 @@ if show_dwd:
             ax.fill_between(f_grid[mask_wd], 1e-25, omega_wd[mask_wd], color='gray', alpha=0.3, linewidth=0)
             ax.text(7e-4, 1e-11, 'DWD', fontsize=15, color='gray', ha='center', fontweight='bold')
 
-# Ceiling
+# Integrated benchmark budget (step3b conditional sum, not a universal ceiling)
 if show_ceiling:
     if use_hc:
-        # In h_c space, the ceiling is frequency-dependent: h_c = sqrt(Omega / (prefac * f^2))
+        # In h_c space, the budget line is frequency-dependent
         f_ceil = np.logspace(-9, 3, 100)
-        hc_ceil = omega_to_hc(f_ceil, np.full_like(f_ceil, 1e-7))
+        hc_ceil = omega_to_hc(f_ceil, np.full_like(f_ceil, INTEGRATED_BUDGET_OMEGA))
         ax.loglog(f_ceil, hc_ceil, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-        ax.text(1e-1, 3e-17, 'Integrated Astrophysical Ceiling', color='red', fontsize=12, fontweight='bold', ha='center')
+        ax.text(1e-1, 3e-17, 'Integrated Benchmark Budget', color='red', fontsize=12, fontweight='bold', ha='center')
     else:
-        ax.axhline(y=1e-7, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
-        ax.text(1e-3, 1.8e-7, 'Integrated Astrophysical Ceiling', color='red', fontsize=14, fontweight='bold', ha='center')
+        ax.axhline(y=INTEGRATED_BUDGET_OMEGA, color='red', linestyle='-', linewidth=2.5, alpha=0.9)
+        ax.text(1e-3, 1.8 * INTEGRATED_BUDGET_OMEGA, 'Integrated Benchmark Budget', color='red', fontsize=14, fontweight='bold', ha='center')
 
 # Populations
 # Select label positions based on display mode
@@ -689,7 +784,7 @@ for name in selected_pops:
             va = 'bottom'
             fontsize = 14
         else:
-            ha = 'right' if name == 'EMRI' else ('left' if name == 'IMBH-SMBH' else 'center')
+            ha = 'right' if name == 'EMRI' else ('left' if name == 'AGN-IMRI' else 'center')
             va = 'bottom' if name == 'EMRI' else 'center'
             fontsize = 16
         ax.text(lx, ly, display_name, fontsize=fontsize, color=params['color'], fontweight='bold', ha=ha, va=va)
@@ -749,24 +844,31 @@ except ValueError:
 # TABLE I - Population Parameters
 # =============================================================================
 st.markdown("---")
-st.subheader("Table I: GWB Population Parameters")
+st.subheader("Declared Benchmark Channels")
 
 table1 = """
-| Population | Reservoir | ρ (M☉/Mpc³) | f_merge | ε_gw | f_ref (Hz) | A_ceiling | Band |
+| Channel | Reservoir | ρ_res (M☉/Mpc³) | ρ_src (M☉/Mpc³) | ε_gw | f_ref (Hz) | h_c(f_ref) | Band |
 |------------|-----------|-------------|---------|------|------------|-----------|------|
-| **SMBHBs** | SMBH | 1.8×10⁶ | 0.1 | 0.02 | 3.2×10⁻⁸ | 1.6×10⁻¹⁵ | PTA |
-| **IMBH-SMBH** | SMBH | 1.8×10⁶ | 0.05 | 0.05 | 3×10⁻³ | 2.3×10⁻²⁰ | LISA |
-| **EMRI** | NSC | 1.4×10⁶ | 0.1 | 0.05 | 10⁻² | 1.1×10⁻²⁰ | LISA |
-| **BNS** | Stellar | 5.9×10⁸ | 1.1×10⁻⁵ | 0.01 | 0.1 | 6.7×10⁻²⁴ | Ground |
-| **Pop III BBH** | Stellar | 5.9×10⁸ | 3×10⁻⁷ | 0.05 | 0.1 | 4.9×10⁻²⁴ | Ground |
-| **Stellar BBH** | Stellar | 5.9×10⁸ | 1.8×10⁻⁵ | 0.05 | 25 | 9.5×10⁻²⁵ | Ground |
+| **SMBHBs** | SMBH (M₁≥10⁸) | 1.8×10⁶ | 1.2×10⁶ | moment | 1 yr⁻¹ | 2.06×10⁻¹⁵ | PTA |
+| **AGN-IMRI** | SMBH | 1.8×10⁶ | 5.4×10² | 0.05 | 3×10⁻³ | 1.34×10⁻²¹ | LISA |
+| **EMRI** | NSC | 6.3×10⁵ | 6.3×10¹ | 0.05 | 10⁻² | 3.48×10⁻²² | LISA |
+| **BNS** | Stellar | 6.3×10⁸ | 1.7×10³ | 0.02 | 0.1 | 4.28×10⁻²⁴ | Ground |
+| **Pop III BBH** | Stellar | 6.3×10⁸ | 7.3×10² | 0.05 | 0.1 | 6.80×10⁻²⁴ | Ground |
+| **Stellar BBH** | Stellar | 6.3×10⁸ | 6.6×10³ | 0.05 | 25 | 4.03×10⁻²⁵ | Ground |
 """
 st.markdown(table1)
 st.caption("""
-**ρ**: Mass density reservoir. SMBH density from Liepold & Ma (2024), ApJL 971, L29.
-**f_merge**: Fraction of reservoir that merges within a Hubble time. 
-**ε_gw**: Radiative efficiency. **A_ceiling**: Maximum characteristic strain amplitude at f_ref.
-Amplitudes scale as A ∝ √ρ relative to fiducial values.
+**ρ_res**: Reservoir mass density (SMBH from Liepold & Ma 2024, ApJL 971, L29;
+stellar = 5×10⁻³ ρ_crit; NSC = 10⁻³ ρ_★).
+**ρ_src**: Processed source density, ρ_src = f_merge × ρ_res.
+**ε_gw**: Radiative efficiency. **h_c(f_ref)**: Benchmark characteristic strain at f_ref.
+The SMBHB benchmark is a one-pass population moment over the erratum-corrected
+dynamical mass function (Newtonian circular inspiral to each source-frame
+Schwarzschild ISCO), not an ε·ρ product.
+A benchmark is one observationally or theoretically motivated choice; a ceiling
+is the maximum over a stated allowed domain. Amplitudes scale as A ∝ √ρ
+relative to fiducial values. All values from the paper's audited
+step3-numbers.json.
 """)
 
 # =============================================================================
@@ -789,22 +891,29 @@ for i, name in enumerate(selected_pops):
 # SMBHB Ceiling Comparison
 # =============================================================================
 st.markdown("---")
-st.subheader("SMBHB Ceiling vs PTA Measurements")
+st.subheader("SMBHB Benchmark vs PTA Measurements")
 st.markdown("""
-**Energetic ceiling with Liepold & Ma (2024) SMBH density:**
+**SMBHB benchmark and conditional ceiling (erratum-corrected dynamical mass
+function, participating domain M₁ ≥ 10⁸ M☉):**
 
-Using ρ_SMBH = (1.8 ± 0.7) × 10⁶ M☉/Mpc³ from Liepold & Ma (2024), the SMBHB energetic ceiling is:
+- One-pass population-moment benchmark: **A_bench = 2.06 × 10⁻¹⁵** at f_ref = 1 yr⁻¹
+- Conditional reference-frequency ceiling: **A_ceil = 2.23 × 10⁻¹⁵**
+- NANOGrav customized-noise (CNM) amplitude: 2.1 (range 1.6–2.7) × 10⁻¹⁵
 
-**A_ceiling = (1.6 ± 0.3) × 10⁻¹⁵** at f_ref = 1 yr⁻¹
-
-| PTA | A (×10⁻¹⁵) | Difference from ceiling |
+| PTA | A (×10⁻¹⁵) at γ=13/3 | A / A_bench |
 |-----|------------|------------------------|
-| PPTA DR3 | 2.04 ± 0.24 | ~1.3σ |
-| NANOGrav 15yr | 2.4 +0.7/-0.6 | ~1.2σ |
-| EPTA DR2 | 2.5 ± 0.7 | ~1.2σ |
-| MPTA | 4.8 +0.8/-0.9 | ~3.4σ |
+| CPTA | 2.0 +0.9/-1.9 dex (95%) | 0.97 |
+| PPTA DR3 | 2.04 ± 0.24 | 0.99 |
+| NANOGrav 15yr | 2.4 +0.7/-0.6 | 1.17 |
+| EPTA DR2 | 2.5 ± 0.7 | 1.22 |
+| MPTA | 4.8 +0.8/-0.9 | 2.33 |
 
-The primary way to reconcile the measured GWB amplitudes with the energetic ceiling is **mis-modeled pulsar noise**, which can bias the inferred amplitude high (see Goncharov et al. 2025). Other effects include, but are not limited to, intrinsic scatter in SMBH-galaxy scaling relations, contributions from the high-mass tail of the SMBH mass function, cosmic variance from nearby massive binaries, and contributions from exotic physics.
+Within this fixed population family, the central NANOGrav CNM amplitude maps to
+a merged mass fraction **f_merge = 1.04 ≃ 1**: the measured background saturates
+the one-pass energetic budget of the M₁ ≥ 10⁸ M☉ population. Amplitudes above
+the conditional ceiling require conditions outside the stated domain (e.g.
+scatter in scaling relations, additional participating mass, cosmic variance
+from nearby massive binaries, or mis-modeled pulsar noise).
 """)
 
 # =============================================================================
