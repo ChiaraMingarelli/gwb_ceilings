@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
 from matplotlib.ticker import LogLocator, FixedLocator, FuncFormatter, NullFormatter
 import hashlib
 import io
@@ -150,11 +151,11 @@ POPULATIONS = {
 # Tuned label positions for Omega_gw mode
 labels_pos_omega = {
     'SMBHB': (1e-8, 1e-11),
-    'AGN-IMRI': (4.4e-2, 4e-11),
+    'AGN-IMRI': (4.6e-2, 1.5e-10),
     'EMRI': (1e-5, 3e-13),
-    'Pop III': (1.5, 2e-12),
+    'Pop III': (12, 3e-11),
     'BNS': (40, 5e-12),
-    'Stellar BBH': (150, 8e-11)
+    'Stellar BBH': (150, 7e-10)
 }
 
 # Tuned label positions for h_c mode (carefully positioned to avoid overlaps)
@@ -175,6 +176,18 @@ detector_labels_omega = {
     'aLIGO': (60, 8e-9),
     'CE': (30, 3e-15),
 }
+
+# Figure-2 visual grammar (matches make_fig2_corrected.py)
+CONTEXT_GRAY = '#8A8A8A'
+CONTEXT_ALPHA = 0.38
+BACKGROUND_FILL_ALPHA = 0.10
+PLOT_OMEGA_MIN = 1e-18
+DWD_GRAY = '#696969'
+
+WHITE_STROKE = [
+    path_effects.Stroke(linewidth=3.0, foreground='white', alpha=0.80),
+    path_effects.Normal(),
+]
 
 # Detector label positions for h_c mode
 detector_labels_hc = {
@@ -628,7 +641,7 @@ if show_muares:
     muares = get_muares_sensitivity(f_grid_tuple, T_yrs=float(muares_obs_years))
     mask_mu = (f_grid > 1e-7) & (f_grid < 1e-1) & (muares < omega_cutoff)
     plot_mu = omega_to_hc(f_grid, muares) if use_hc else muares
-    ax.loglog(f_grid[mask_mu], plot_mu[mask_mu], color='gray', ls='-.', alpha=0.6, lw=1.2)
+    ax.loglog(f_grid[mask_mu], plot_mu[mask_mu], color=CONTEXT_GRAY, ls='-.', alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['muAres']
     ax.text(lx, ly, '\u03bcAres ({0}yr)'.format(muares_obs_years), fontsize=10, color='gray', ha='left')
 
@@ -636,7 +649,7 @@ if show_bbo:
     bbo = get_bbo_sensitivity(f_grid_tuple, T_yrs=float(bbo_obs_years))
     mask_bbo = (bbo > 0) & (bbo < omega_cutoff)
     plot_bbo = omega_to_hc(f_grid, bbo) if use_hc else bbo
-    ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color='gray', ls='--', alpha=0.6, lw=1.2)
+    ax.loglog(f_grid[mask_bbo], plot_bbo[mask_bbo], color=CONTEXT_GRAY, ls='-', alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['BBO']
     ax.text(lx, ly, f'BBO ({bbo_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
@@ -644,7 +657,7 @@ if show_lisa:
     lisa = get_lisa_sensitivity(f_grid_tuple, T_yrs=float(lisa_obs_years))
     mask_lisa = lisa < omega_cutoff
     plot_lisa = omega_to_hc(f_grid, lisa) if use_hc else lisa
-    ax.loglog(f_grid[mask_lisa], plot_lisa[mask_lisa], color='gray', ls='--', alpha=0.6, lw=1.5)
+    ax.loglog(f_grid[mask_lisa], plot_lisa[mask_lisa], color=CONTEXT_GRAY, ls='--', alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['LISA']
     ax.text(lx, ly, f'LISA ({lisa_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
@@ -652,7 +665,7 @@ if show_aligo:
     aligo = get_aligo_design_pi(f_grid_tuple)
     mask_aligo = (aligo < 1e-4) & (aligo < omega_cutoff)
     plot_aligo = omega_to_hc(f_grid, aligo) if use_hc else aligo
-    ax.loglog(f_grid[mask_aligo], plot_aligo[mask_aligo], color='gray', ls=':', alpha=0.6, lw=1.2)
+    ax.loglog(f_grid[mask_aligo], plot_aligo[mask_aligo], color=CONTEXT_GRAY, ls=(0, (5.0, 2.0)), alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['aLIGO']
     ax.text(lx, ly, 'aLIGO design', fontsize=10, color='gray', ha='center')
 
@@ -660,7 +673,7 @@ if show_ce:
     ce = get_ce_sensitivity(f_grid_tuple, T_yrs=float(ce_obs_years))
     mask_ce = (ce < 1e-4) & (ce < omega_cutoff)
     plot_ce = omega_to_hc(f_grid, ce) if use_hc else ce
-    ax.loglog(f_grid[mask_ce], plot_ce[mask_ce], color='gray', ls=':', alpha=0.6, lw=1.2)
+    ax.loglog(f_grid[mask_ce], plot_ce[mask_ce], color=CONTEXT_GRAY, ls=':', alpha=CONTEXT_ALPHA, lw=0.9, zorder=0)
     lx, ly = det_labels['CE']
     ax.text(lx, ly, f'CE ({ce_obs_years}yr)', fontsize=10, color='gray', ha='center')
 
@@ -689,10 +702,11 @@ if show_ptas:
             preset=pta_name
         )
         mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
+        if show_ceiling:
+            mask_pta &= pta_omega < omega_cutoff
         if np.any(mask_pta):
             style = pta_styles.get(pta_name, {'color': 'gray', 'ls': '-'})
-            pta_plot_omega = np.minimum(pta_omega, 1e-7) if show_ceiling else pta_omega
-            plot_pta = omega_to_hc(pta_freqs, pta_plot_omega) if use_hc else pta_plot_omega
+            plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
             ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta],
                      color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
             label_text = pta_name.replace(' (proj.)', '*').replace('NANOGrav ', 'NG').replace('yr', '')
@@ -718,10 +732,11 @@ if show_ptas:
             preset='Custom'
         )
         mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
+        if show_ceiling:
+            mask_pta &= pta_omega < omega_cutoff
         if np.any(mask_pta):
             style = pta_styles['Custom']
-            pta_plot_omega = np.minimum(pta_omega, 1e-7) if show_ceiling else pta_omega
-            plot_pta = omega_to_hc(pta_freqs, pta_plot_omega) if use_hc else pta_plot_omega
+            plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
             ax.loglog(pta_freqs[mask_pta], plot_pta[mask_pta],
                      color=style['color'], ls=style['ls'], alpha=0.9, lw=1.5)
             min_idx = np.argmin(plot_pta[mask_pta])
@@ -734,18 +749,24 @@ if show_ptas:
                 va = 'top'
             ax.text(label_x, label_y, 'Custom', fontsize=10, color=style['color'], ha='center', va=va)
 
-# DWD foreground
+# DWD foreground (Figure-2 style: thin line, dashed continuation, light fill)
 if show_dwd:
     omega_wd = get_dwd_foreground(f_grid_tuple)
-    mask_wd = omega_wd > 1e-25
-    if np.any(mask_wd):
+    solid_wd = (f_grid >= 1e-5) & (f_grid < 2e-2) & (omega_wd > PLOT_OMEGA_MIN)
+    cont_wd = (f_grid >= 10.0**-5.5) & (f_grid <= 1e-5) & (omega_wd > PLOT_OMEGA_MIN)
+    fill_wd = (f_grid >= 10.0**-5.5) & (f_grid < 2e-2) & (omega_wd > PLOT_OMEGA_MIN)
+    if np.any(fill_wd):
         if use_hc:
             hc_wd = omega_to_hc(f_grid, omega_wd)
-            ax.fill_between(f_grid[mask_wd], 1e-26, hc_wd[mask_wd], color='gray', alpha=0.15, linewidth=0)
+            ax.loglog(f_grid[solid_wd], hc_wd[solid_wd], color=DWD_GRAY, alpha=0.72, lw=1.2, zorder=2)
+            ax.loglog(f_grid[cont_wd], hc_wd[cont_wd], color=DWD_GRAY, ls=(0, (3.0, 2.0)), alpha=0.66, lw=1.1, zorder=2)
+            ax.fill_between(f_grid[fill_wd], 1e-26, hc_wd[fill_wd], color=DWD_GRAY, alpha=BACKGROUND_FILL_ALPHA, linewidth=0, zorder=1)
             ax.text(2e-3, 5e-18, 'DWD', fontsize=12, color='dimgray', ha='center', fontweight='bold')
         else:
-            ax.fill_between(f_grid[mask_wd], 1e-25, omega_wd[mask_wd], color='gray', alpha=0.3, linewidth=0)
-            ax.text(7e-4, 1e-11, 'DWD', fontsize=15, color='gray', ha='center', fontweight='bold')
+            ax.loglog(f_grid[solid_wd], omega_wd[solid_wd], color=DWD_GRAY, alpha=0.72, lw=1.2, zorder=2)
+            ax.loglog(f_grid[cont_wd], omega_wd[cont_wd], color=DWD_GRAY, ls=(0, (3.0, 2.0)), alpha=0.66, lw=1.1, zorder=2)
+            ax.fill_between(f_grid[fill_wd], PLOT_OMEGA_MIN, omega_wd[fill_wd], color=DWD_GRAY, alpha=BACKGROUND_FILL_ALPHA, linewidth=0, zorder=1)
+            ax.text(7e-4, 3e-10, 'Galactic DWD', fontsize=11, color='dimgray', ha='center', fontweight='bold')
 
 # Integrated benchmark budget (step3b conditional sum, not a universal ceiling)
 if show_ceiling:
@@ -771,11 +792,13 @@ for name in selected_pops:
     if np.any(valid):
         if use_hc:
             hc_pop = omega_to_hc(f_grid, omega)
-            ax.loglog(f_grid[valid], hc_pop[valid], color=params['color'], lw=2.5, alpha=1.0)
-            ax.fill_between(f_grid[valid], 1e-26, hc_pop[valid], color=params['color'], alpha=0.08, linewidth=0)
+            (pop_line,) = ax.loglog(f_grid[valid], hc_pop[valid], color=params['color'], lw=2.05, alpha=0.98, zorder=5)
+            pop_line.set_path_effects(WHITE_STROKE)
+            ax.fill_between(f_grid[valid], 1e-26, hc_pop[valid], color=params['color'], alpha=BACKGROUND_FILL_ALPHA, linewidth=0, zorder=1)
         else:
-            ax.loglog(f_grid[valid], omega[valid], color=params['color'], lw=2.5, alpha=1.0)
-            ax.fill_between(f_grid[valid], 1e-25, omega[valid], color=params['color'], alpha=0.15, linewidth=0)
+            (pop_line,) = ax.loglog(f_grid[valid], omega[valid], color=params['color'], lw=2.05, alpha=0.98, zorder=5)
+            pop_line.set_path_effects(WHITE_STROKE)
+            ax.fill_between(f_grid[valid], PLOT_OMEGA_MIN, omega[valid], color=params['color'], alpha=BACKGROUND_FILL_ALPHA, linewidth=0, zorder=1)
         lx, ly = pop_labels.get(name, (1e-4, 1e-15))
         display_name = display_names.get(name, name)
         # Different alignment for h_c mode vs omega mode
