@@ -21,26 +21,29 @@ def _log_fmt(x, pos):
     return ''
 
 # =============================================================================
-# Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds
-# 
-# Interactive visualization tool for GWB ceiling constraints
+# Energetic Ceilings and Benchmarks of Astrophysical Gravitational-Wave
+# Backgrounds
+#
+# Interactive visualization tool for GWB benchmarks and ceilings
 #
 # Author: Chiara Mingarelli (Yale University)
 # Code development assisted by Claude (Anthropic)
 #
-# Reference: Mingarelli (2026), "Energetic Ceilings on Astrophysical
-#            Gravitational-Wave Backgrounds", arXiv:2601.18859
+# Reference: Mingarelli (2026), "Energetic Ceilings and Benchmarks of
+#            Astrophysical Gravitational-Wave Backgrounds", arXiv:2601.18859
 #
 # If you use figures from this tool, please cite:
 #   Mingarelli, C. M. F. (2026), arXiv:2601.18859
 #   https://arxiv.org/abs/2601.18859
 #
 # All conventions, benchmark amplitudes, and detector curves are synchronized
-# with the paper's verification suite (verify_ceilings.py, step3-numbers.json,
-# make_fig2_corrected.py).  Omega_gw(f) = (2 pi^2 / 3 H0^2) f^3 S_h(f)
-# throughout; detector curves are single-natural-log-bin, SNR-one orientation
-# curves, Omega_n(f)/sqrt(T f).  Official detector data products are
-# hash-pinned in data/detectors/ (see the README there for provenance).
+# with the paper's reproducibility package in reproducibility/
+# (verify_ceilings.py, results/step3-numbers.json, make_fig2_corrected.py);
+# the main figure mirrors the manuscript's Figure 3.
+# Omega_gw(f) = (2 pi^2 / 3 H0^2) f^3 S_h(f) throughout; detector curves are
+# single-natural-log-bin, SNR-one orientation curves, Omega_n(f)/sqrt(T f).
+# Official detector data products are hash-pinned in
+# reproducibility/data/detectors/ (see the README there for provenance).
 # =============================================================================
 
 # Physical Constants (synchronized with verify_ceilings.py)
@@ -51,8 +54,11 @@ h = H0_km_s_Mpc / 100.0
 YR_SI = 365.25 * 86_400.0
 F_YR = 1.0 / YR_SI  # 1 yr^-1 in Hz
 
-# Hash-pinned official detector data products (see data/detectors/README.md)
-DATA_DIR = Path(__file__).resolve().parent / "data" / "detectors"
+# Hash-pinned official detector data products, shared with the paper's
+# reproducibility package (see reproducibility/data/detectors/README.md)
+DATA_DIR = (
+    Path(__file__).resolve().parent / "reproducibility" / "data" / "detectors"
+)
 ALIGO_DESIGN_PI = DATA_DIR / "Figures_3_and_4_PICurve_Design.dat"
 ALIGO_DESIGN_PI_SHA256 = (
     "7d32bbf49db02a653da043266c74efce7761490c978b9f1e1ae92d06711f5ef4"
@@ -81,37 +87,37 @@ RHO_SMBH_FID = 1.8e6  # Liepold & Ma (2024), ApJL 971, L29
 RHO_STELLAR_FID = 630372082.0092556  # 5e-3 x rho_crit
 RHO_NSC_FID = 630372.0820092556  # ETA_NSC_FIDUCIAL = 1e-3 x rho_star
 
-# Integrated benchmark energy budget (step3b): the conditional sum of the
-# declared benchmark source-event spectra, Sum_i Omega_i dlnf.  Not a
-# universal ceiling, jointly inferred population, or baryonic wall.
-INTEGRATED_BUDGET_OMEGA = 1.3907155534322894e-07
+# Six-channel benchmark energy sum (step3b): the sum of the declared
+# benchmark source-event spectra, Sum_i Omega_i dlnf.  A reference sum,
+# not a universal ceiling: the six cases need not occur together.
+BENCHMARK_ENERGY_SUM_OMEGA = 2.0370537460605108e-07  # E_bench^(6)
 
 # Declared benchmark channels, anchored to the paper's audited scalars
-# (step3-numbers.json).  A_bench is the characteristic strain h_c at f_ref;
-# each band is drawn as the f^{-2/3} inspiral law over [f_min, f_max].  For
-# the phenomenological-shape channels (Pop III, Stellar BBH) f_max is set at
-# the audited spectral peak so the power-law band ends where the true
-# spectrum turns over.  rho_src is the processed source density
-# rho_src = f_merge * rho_res for the table below.
+# (reproducibility/results/step3-numbers.json).  A_bench is the
+# characteristic strain h_c at f_ref; each band is drawn as the f^{-2/3}
+# inspiral law over [f_min, f_max].  For the phenomenological-shape channels
+# (Pop III, Stellar BBH) f_max is set at the audited spectral peak so the
+# power-law band ends where the true spectrum turns over.  rho_src is the
+# processed source density rho_src = f_merge * rho_res for the table below.
 POPULATIONS = {
     'SMBHB': {
         'reservoir': 'SMBH',
         'f_ref': F_YR,
-        'A_bench': 2.0572436926091547e-15,  # benchmark_A_1yr, M1 >= 1e8 Msun
+        'A_bench': 2.1078708082857504e-15,  # benchmark_A_1yr, full LM24 census
         'f_min': 1e-9,
-        'f_max': 4e-7,
+        'f_max': 1e-6,
         'epsilon_gw': None,  # one-pass population moment, not eps*rho
-        'rho_src': 1225283.3222939118,  # participating mass density
+        'rho_src': 1800000.0,  # full LM24 census, f_merge = 1
         'color': '#0072B2',
     },
     'AGN-IMRI': {
         'reservoir': 'SMBH',
         'f_ref': 3e-3,
-        'A_bench': 1.337115866150623e-21,  # agn_imri_benchmark
+        'A_bench': 1.3460004546947788e-21,  # agn_imri_benchmark
         'f_min': 1e-5,
         'f_max': 4e-2,
         'epsilon_gw': 0.05,
-        'rho_src': 540.0,
+        'rho_src': 547.2,
         'color': '#D55E00',
     },
     'EMRI': {
@@ -168,7 +174,7 @@ labels_pos_hc = {
 
 # Detector label positions for Omega_gw mode (paper Figure-3 placements)
 detector_labels_omega = {
-    'muAres': (1.6e-6, 1e-15),
+    'muAres': (1.6e-6, 8e-13),
     'BBO': (1.2e-1, 4e-17),
     'LISA': (2e-3, 1e-13),
     'aLIGO': (17, 5.5e-9),
@@ -182,14 +188,14 @@ CONTEXT_ALPHA = 0.38
 BACKGROUND_FILL_ALPHA = 0.10
 PLOT_OMEGA_MIN = 1e-18
 DWD_GRAY = '#696969'
-BUDGET_RED = '#B2182B'
 NANOGRAV_FACE_ALPHA = 0.30
 NANOGRAV_EDGE_ALPHA = 0.58
 DETECTOR_PLOT_MAX = 2.0e-7
 LOW_FREQUENCY_CONTINUATION_DEX = 0.50
+SMBHB_DISPLAY_MAXIMUM_HZ = 1.0e-6
+SMBHB_HIGH_FREQUENCY_CONTINUATION_DEX = 0.50
 EMRI_MODEL_CUTOFF_HZ = 1.0e-2
 EMRI_HIGH_FREQUENCY_CONTINUATION_DEX = 0.50
-CUMULATIVE_QUANTILES = (0.50, 0.90, 0.99)
 
 WHITE_STROKE = [
     path_effects.Stroke(linewidth=3.0, foreground='white', alpha=0.80),
@@ -199,11 +205,25 @@ LABEL_STROKE = [
     path_effects.withStroke(linewidth=2.2, foreground='white', alpha=0.95),
 ]
 
-# Audited paper spectra and NANOGrav free-spectrum context (hash-pinned
-# copies of the paper's step3-spectra.npz / step3-figure-context.npz)
-SPECTRA_FILE = Path(__file__).resolve().parent / "data" / "step3-spectra.npz"
+# Audited paper spectra (the reproducibility package's authoritative frozen
+# archive) and NANOGrav free-spectrum context (hash-pinned local archive)
+SPECTRA_FILE = (
+    Path(__file__).resolve().parent
+    / "reproducibility" / "results" / "step3-spectra.npz"
+)
 SPECTRA_SHA256 = (
-    "a146133de1e39bb335a1b5900f8d6ad39ea06fde88b19ccbd8fedba173936688"
+    "1c5227202cc15944671942507b83d0dd25dcabc5dbecb8e16252b3baf9add70d"
+)
+# Extended SMBHB display curve for the multiband figure: the frozen archive
+# masks the SMBHB spectrum to its PTA display segment, so the plot curve over
+# [1e-9.5, 1e-5.5] Hz is precomputed with smbhb_population_omega from
+# reproducibility/verify_ceilings.py (full LM24 census benchmark), exactly as
+# in make_fig2_corrected.py.
+SMBHB_PLOT_CURVE_FILE = (
+    Path(__file__).resolve().parent / "data" / "smbhb-plot-curve.npz"
+)
+SMBHB_PLOT_CURVE_SHA256 = (
+    "c3b88d221be817d06769ad355c649c2c33006ab2b36f85e712ddb115db3f8c64"
 )
 PTA_CONTEXT_FILE = (
     Path(__file__).resolve().parent / "data" / "step3-figure-context.npz"
@@ -416,7 +436,13 @@ def get_dwd_foreground(f_tuple):
 
 @st.cache_data
 def load_benchmark_spectra():
-    """Load the audited paper spectra (hash-pinned step3-spectra.npz)."""
+    """Load the audited paper spectra (hash-pinned step3-spectra.npz).
+
+    As in make_fig2_corrected.py, the SMBHB curve is replaced with the
+    full-census plot curve over [1e-9.5, 1e-5.5] Hz (precomputed and
+    hash-pinned), since the frozen archive masks the SMBHB spectrum to its
+    PTA display segment.
+    """
     digest = hashlib.sha256(SPECTRA_FILE.read_bytes()).hexdigest()
     if digest != SPECTRA_SHA256:
         raise RuntimeError("Benchmark spectra archive hash changed.")
@@ -427,6 +453,21 @@ def load_benchmark_spectra():
             for key in archive.files
             if key != "frequency_hz"
         }
+
+    digest = hashlib.sha256(SMBHB_PLOT_CURVE_FILE.read_bytes()).hexdigest()
+    if digest != SMBHB_PLOT_CURVE_SHA256:
+        raise RuntimeError("SMBHB plot-curve archive hash changed.")
+    with np.load(SMBHB_PLOT_CURVE_FILE) as archive:
+        plot_frequency = np.asarray(archive["frequency_hz"], dtype=float)
+        plot_omega = np.asarray(archive["smbhb_benchmark_omega"], dtype=float)
+    support = (frequency >= plot_frequency[0]) & (
+        frequency <= plot_frequency[-1]
+    )
+    if not np.allclose(frequency[support], plot_frequency, rtol=1e-12):
+        raise RuntimeError("SMBHB plot curve is not on the archive grid.")
+    smbhb_curve = np.zeros_like(frequency)
+    smbhb_curve[support] = plot_omega
+    spectra["smbhb_benchmark"] = smbhb_curve
     return frequency, spectra
 
 
@@ -456,20 +497,30 @@ def display_curve(values):
 
 
 def benchmark_display_curve(frequency, values, spectrum_key):
-    """Apply the declared plot-only low-frequency interpretation boundary."""
+    """Apply the declared plot-only interpretation boundaries."""
     curve = display_curve(values)
     curve[frequency < BENCHMARK_DISPLAY_MINIMUM_HZ[spectrum_key]] = np.nan
+    if spectrum_key == 'smbhb_benchmark':
+        curve[frequency > SMBHB_DISPLAY_MAXIMUM_HZ] = np.nan
     return curve
 
 
 def benchmark_continuation_curve(frequency, values, spectrum_key):
-    """Show a half-decade analytic continuation below the solid boundary."""
+    """Show half-decade guide continuations outside solid boundaries."""
     curve = display_curve(values)
     solid_minimum = BENCHMARK_DISPLAY_MINIMUM_HZ[spectrum_key]
     continuation_minimum = solid_minimum * 10.0 ** (
         -LOW_FREQUENCY_CONTINUATION_DEX
     )
     support = (frequency >= continuation_minimum) & (frequency <= solid_minimum)
+    if spectrum_key == 'smbhb_benchmark':
+        continuation_maximum = SMBHB_DISPLAY_MAXIMUM_HZ * 10.0 ** (
+            SMBHB_HIGH_FREQUENCY_CONTINUATION_DEX
+        )
+        support |= (
+            (frequency >= SMBHB_DISPLAY_MAXIMUM_HZ)
+            & (frequency <= continuation_maximum)
+        )
     curve[~support] = np.nan
     return curve
 
@@ -495,18 +546,6 @@ def emri_high_frequency_continuation(frequency, values):
         continuation_frequency / EMRI_MODEL_CUTOFF_HZ
     ) ** (2.0 / 3.0)
     return continuation_frequency, continuation_omega
-
-
-def cumulative_budget_fraction(frequency, omega_sum):
-    """Cumulative fraction of the integrated budget, Int Omega dlnf below f."""
-    lnf = np.log(frequency)
-    contributions = np.zeros_like(omega_sum)
-    contributions[1:] = (
-        0.5 * (omega_sum[1:] + omega_sum[:-1]) * np.diff(lnf)
-    )
-    cumulative = np.cumsum(contributions)
-    total = cumulative[-1]
-    return cumulative / total, total
 
 
 def scale_amplitude(A_bench, reservoir, rho_smbh, rho_stellar, rho_nsc):
@@ -564,14 +603,15 @@ def omega_to_hc(freqs, omega_gw):
 
 # Streamlit app
 st.set_page_config(page_title="GW Background Ceilings", layout="wide")
-st.title("Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds")
+st.title("Energetic Ceilings and Benchmarks of Astrophysical Gravitational-Wave Backgrounds")
 
 st.markdown("""
-Interactive visualization of astrophysical gravitational wave background ceilings 
-based on energy reservoir constraints. Adjust the mass density reservoirs to see 
-how the GWB amplitudes scale.
+Interactive visualization of astrophysical gravitational wave background
+benchmarks and ceilings based on energy reservoir constraints. Adjust the mass
+density reservoirs to see how the GWB amplitudes scale. The main figure
+mirrors Figure 3 of the paper.
 
-**Reference:** Mingarelli (2026), *Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds* — [arXiv:2601.18859](https://arxiv.org/abs/2601.18859)
+**Reference:** Mingarelli (2026), *Energetic Ceilings and Benchmarks of Astrophysical Gravitational-Wave Backgrounds* — [arXiv:2601.18859](https://arxiv.org/abs/2601.18859)
 
 If you use figures from this tool, please cite [Mingarelli (2026)](https://arxiv.org/abs/2601.18859).
 """)
@@ -622,7 +662,6 @@ st.sidebar.header("Display Options")
 y_axis_unit = "Ω_gw"  # Fixed to Omega_gw for now
 show_dwd = st.sidebar.checkbox("Show DWD foreground", value=True)
 show_nanograv = st.sidebar.checkbox("Show NANOGrav violins (free-spectrum)", value=True)
-show_ceiling = st.sidebar.checkbox("Show integrated benchmark strip", value=True)
 
 # Individual detector toggles
 with st.sidebar.expander("Detectors", expanded=True):
@@ -674,16 +713,8 @@ selected_pops = st.sidebar.multiselect(
 # Set axis based on y-axis unit choice
 use_hc = (y_axis_unit == "h_c (characteristic strain)")
 
-# Create figure (with the cumulative benchmark strip below, as in the paper)
-show_budget_strip = show_ceiling and not use_hc
-if show_budget_strip:
-    fig, (ax, ax_budget) = plt.subplots(
-        2, 1, figsize=(14, 8.2), sharex=True,
-        gridspec_kw={'height_ratios': (4.0, 0.75), 'hspace': 0.04},
-    )
-else:
-    fig, ax = plt.subplots(figsize=(14, 7))
-    ax_budget = None
+# Create figure (one panel, matching the paper's Figure 3)
+fig, ax = plt.subplots(figsize=(14, 7))
 fig.patch.set_facecolor('white')
 
 f_grid = F_GRID  # Use pre-computed grid
@@ -761,8 +792,6 @@ if show_ptas:
     for i, pta_name in enumerate(pta_presets):
         pta_freqs, pta_omega = get_pta_curve(pta_name)
         mask_pta = (pta_omega > 1e-18) & (pta_omega < 1e-5) & (pta_freqs > 1e-10) & (pta_freqs < 1e-6)
-        if show_ceiling:
-            mask_pta &= pta_omega < omega_cutoff
         if np.any(mask_pta):
             style = pta_styles.get(pta_name, {'color': 'gray', 'ls': '-'})
             plot_pta = omega_to_hc(pta_freqs, pta_omega) if use_hc else pta_omega
@@ -816,7 +845,6 @@ if show_nanograv and not use_hc:
 
 # Populations: audited paper spectra, scaled linearly with reservoir density
 spec_f, spec_curves = load_benchmark_spectra()
-scaled_selected_sum = np.zeros_like(spec_f)
 
 
 def label_curve(curve, x_value, label, offset, color, horizontal='center', vertical='center'):
@@ -830,19 +858,22 @@ def label_curve(curve, x_value, label, offset, color, horizontal='center', verti
     ax.annotate(
         label, xy=(x_value, y_value), xytext=offset,
         textcoords='offset points', color=color, fontsize=13,
-        fontweight='bold', ha=horizontal, va=vertical,
+        fontweight='semibold', ha=horizontal, va=vertical,
         path_effects=LABEL_STROKE, annotation_clip=False, zorder=9,
     )
 
 
+# Dark curve-label color, as in the paper's Figure 3
+POP_LABEL_COLOR = '#202020'
+
 # (x anchor, label text, offset points, ha, va) — paper Figure-3 placements
 POP_LABEL_SPECS = {
-    'SMBHB': (5.0e-8, 'SMBHBs', (0, -20), 'center', 'top'),
-    'EMRI': (2.0e-3, 'EMRI', (-10, -16), 'right', 'top'),
-    'AGN-IMRI': (1.5e-2, 'IMRI', (2, 13), 'center', 'bottom'),
-    'Pop III': (2.0, 'POPIII', (-4, -16), 'right', 'top'),
-    'Stellar BBH': (70.0, 'sBBHs', (0, 13), 'center', 'bottom'),
-    'BNS': (300.0, 'BNS', (12, -2), 'left', 'center'),
+    'SMBHB': (5.0e-8, 'SMBHB', (0, -18), 'center', 'top'),
+    'EMRI': (2.0e-3, 'EMRI', (-10, -14), 'right', 'top'),
+    'AGN-IMRI': (1.5e-2, 'AGN-IMRI', (0, 12), 'center', 'bottom'),
+    'Pop III': (2.0, 'Pop III', (-4, -14), 'right', 'top'),
+    'Stellar BBH': (70.0, 'sBBHs', (0, 12), 'center', 'bottom'),
+    'BNS': (300.0, 'BNS', (10, -2), 'left', 'center'),
 }
 
 for name in selected_pops:
@@ -850,7 +881,6 @@ for name in selected_pops:
     key = SPECTRUM_KEYS[name]
     ratio = reservoir_ratio(params['reservoir'], rho_smbh, rho_stellar, rho_nsc)
     omega_spec = spec_curves[key] * ratio
-    scaled_selected_sum += omega_spec
 
     curve = benchmark_display_curve(spec_f, omega_spec, key)
     continuation = benchmark_continuation_curve(spec_f, omega_spec, key)
@@ -879,41 +909,11 @@ for name in selected_pops:
 
     if not use_hc:
         x_anchor, text, offset, ha_lbl, va_lbl = POP_LABEL_SPECS[name]
-        label_curve(curve, x_anchor, text, offset, params['color'], ha_lbl, va_lbl)
+        label_curve(curve, x_anchor, text, offset, POP_LABEL_COLOR, ha_lbl, va_lbl)
     else:
         lx, ly = labels_pos_hc.get(name, (1e-4, 1e-20))
         ax.text(lx, ly, display_names.get(name, name), fontsize=14,
                 color=params['color'], fontweight='bold', ha='left', va='bottom')
-
-# Cumulative benchmark strip (paper style)
-if show_budget_strip and np.any(scaled_selected_sum > 0.0):
-    cumulative_fraction, e_comp = cumulative_budget_fraction(spec_f, scaled_selected_sum)
-    ax_budget.fill_between(spec_f, 0.0, cumulative_fraction, color=BUDGET_RED,
-                           alpha=0.08, linewidth=0.0, zorder=1)
-    ax_budget.plot(spec_f, cumulative_fraction, color=BUDGET_RED, lw=1.9, zorder=3)
-    ax_budget.axhline(1.0, color=BUDGET_RED, linestyle=(0, (3.0, 2.0)),
-                      lw=0.8, alpha=0.52, zorder=2)
-    for quantile in CUMULATIVE_QUANTILES:
-        idx = int(np.searchsorted(cumulative_fraction, quantile))
-        idx = min(idx, cumulative_fraction.size - 1)
-        qf = spec_f[idx]
-        ax_budget.axvline(qf, color=CONTEXT_LABEL_GRAY,
-                          linestyle=(0, (1.0, 2.0)), lw=0.8, alpha=0.62, zorder=2)
-        ax_budget.annotate(f"{quantile:.0%}", xy=(qf, 0.055), xytext=(4.0, 0.0),
-                           textcoords='offset points', color=CONTEXT_LABEL_GRAY,
-                           fontsize=9, ha='left', va='bottom', zorder=4)
-    exponent = int(np.floor(np.log10(e_comp)))
-    mantissa = e_comp / 10.0**exponent
-    e_comp_text = (
-        rf"$\mathcal{{E}}_{{\mathrm{{comp}}}} = "
-        rf"{mantissa:.1f} \times 10^{{{exponent}}}$"
-    )
-    ax_budget.text(3e-3, 0.40,
-                   "Integrated benchmark,  " + e_comp_text,
-                   color=BUDGET_RED, fontsize=13, ha='left', va='center')
-    ax_budget.set_ylim(0.0, 1.12)
-    ax_budget.set_ylabel('cumulative\nfraction', fontsize=11)
-    ax_budget.set_xscale('log')
 
 ax.tick_params(axis='both', which='major', labelsize=12, length=6)
 ax.tick_params(axis='both', which='minor', length=3)
@@ -922,13 +922,11 @@ for spine in ax.spines.values():
     spine.set_linewidth(1.2)
 
 # Set tick locators and formatters AFTER all loglog() calls, because loglog() resets them
-bottom_ax = ax_budget if ax_budget is not None else ax
-bottom_ax.set_xlabel('Frequency f [Hz]', fontsize=14)
-for axes_obj in ([ax, ax_budget] if ax_budget is not None else [ax]):
-    axes_obj.xaxis.set_major_locator(FixedLocator([10**i for i in range(-9, 4)]))
-    axes_obj.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
-    axes_obj.xaxis.set_major_formatter(FuncFormatter(_log_fmt))
-    axes_obj.xaxis.set_minor_formatter(NullFormatter())
+ax.set_xlabel('frequency f (Hz)', fontsize=14)
+ax.xaxis.set_major_locator(FixedLocator([10**i for i in range(-9, 4, 2)]))
+ax.xaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
+ax.xaxis.set_major_formatter(FuncFormatter(_log_fmt))
+ax.xaxis.set_minor_formatter(NullFormatter())
 if use_hc:
     ax.yaxis.set_major_locator(FixedLocator([10**i for i in range(-26, -11)]))
 else:
@@ -936,11 +934,6 @@ else:
 ax.yaxis.set_minor_locator(LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=100))
 ax.yaxis.set_major_formatter(FuncFormatter(_log_fmt))
 ax.yaxis.set_minor_formatter(NullFormatter())
-if ax_budget is not None:
-    ax_budget.set_yticks([0.0, 0.5, 1.0])
-    ax_budget.tick_params(axis='both', which='major', labelsize=12, length=6)
-    for spine in ax_budget.spines.values():
-        spine.set_linewidth(1.2)
 
 plt.tight_layout()
 st.pyplot(fig)
@@ -981,28 +974,29 @@ st.markdown("---")
 st.subheader("Declared Benchmark Channels")
 
 table1 = """
-| Channel | Reservoir | ρ_res (M☉/Mpc³) | ρ_src (M☉/Mpc³) | ε_gw | f_ref (Hz) | h_c(f_ref) | Band |
-|------------|-----------|-------------|---------|------|------------|-----------|------|
-| **SMBHBs** | SMBH (M₁≥10⁸) | 1.8×10⁶ | 1.2×10⁶ | moment | 1 yr⁻¹ | 2.06×10⁻¹⁵ | PTA |
-| **AGN-IMRI** | SMBH | 1.8×10⁶ | 5.4×10² | 0.05 | 3×10⁻³ | 1.34×10⁻²¹ | LISA |
-| **EMRI** | NSC | 6.3×10⁵ | 6.3×10¹ | 0.05 | 10⁻² | 3.48×10⁻²² | LISA |
-| **BNS** | Stellar | 6.3×10⁸ | 1.7×10³ | 0.02 | 0.1 | 4.28×10⁻²⁴ | Ground |
-| **Pop III BBH** | Stellar | 6.3×10⁸ | 7.3×10² | 0.05 | 0.1 | 6.80×10⁻²⁴ | Ground |
-| **Stellar BBH** | Stellar | 6.3×10⁸ | 6.6×10³ | 0.05 | 25 | 4.03×10⁻²⁵ | Ground |
+| Channel | Reservoir | ρ_res (M☉/Mpc³) | f_merge | ρ_src (M☉/Mpc³) | ε_gw | f_ref (Hz) | h_c(f_ref) | E_i = ∫Ω dlnf | Band |
+|------------|-----------|-------------|---------|---------|------|------------|-----------|-----------|------|
+| **SMBHBs** | SMBH (ρ_•) | 1.80×10⁶ | 1 | 1.8×10⁶ | ≃0.02 | 1 yr⁻¹ | 2.11×10⁻¹⁵ | 2.02×10⁻⁷ | PTA |
+| **AGN-IMRI** | AGN BBH (ρ_BBH) | 1.82×10⁴ | f_AGN·κ_IM = 0.03 | 5.5×10² | 0.05 | 3×10⁻³ | 1.35×10⁻²¹ | 1.48×10⁻¹⁰ | LISA |
+| **EMRI** | NSC (ρ_nuc) | 6.30×10⁵ | 10⁻⁴ | 6.3×10¹ | 0.05 | 10⁻² | 3.48×10⁻²² | 2.50×10⁻¹¹ | LISA |
+| **BNS** | Stellar (ρ_★) | 6.30×10⁸ | 2.63×10⁻⁶ | 1.7×10³ | 0.02 | 0.1 | 4.28×10⁻²⁴ | 1.80×10⁻¹⁰ | Ground |
+| **Pop III BBH** | Pop III (ρ_III) | 7.33×10⁴ | 0.01 | 7.3×10² | 0.05 | 0.1 | 6.80×10⁻²⁴ | 3.33×10⁻¹¹ | Ground |
+| **Stellar BBH** | Stellar (ρ_★) | 6.30×10⁸ | 1.05×10⁻⁵ | 6.6×10³ | 0.05 | 25 | 4.03×10⁻²⁵ | 1.79×10⁻⁹ | Ground |
 """
 st.markdown(table1)
 st.caption("""
-**ρ_res**: Reservoir mass density (SMBH from Liepold & Ma 2024, ApJL 971, L29;
-stellar = 5×10⁻³ ρ_crit; NSC = 10⁻³ ρ_★).
+**ρ_res**: Reservoir mass density (SMBH census from Liepold & Ma 2024,
+ApJL 971, L29, with erratum; stellar = 5×10⁻³ ρ_crit; NSC = 10⁻³ ρ_★).
 **ρ_src**: Processed source density, ρ_src = f_merge × ρ_res.
-**ε_gw**: Radiative efficiency. **h_c(f_ref)**: Benchmark characteristic strain at f_ref.
-The SMBHB benchmark is a one-pass population moment over the erratum-corrected
-dynamical mass function (Newtonian circular inspiral to each source-frame
-Schwarzschild ISCO), not an ε·ρ product.
-A benchmark is one observationally or theoretically motivated choice; a ceiling
-is the maximum over a stated allowed domain. Amplitudes scale as A ∝ √ρ
+**ε_gw**: Radiative efficiency. **h_c(f_ref)**: Benchmark characteristic
+strain at f_ref. **E_i**: Integrated dimensionless GW energy density.
+The SMBHB benchmark is a one-pass population moment over the full LM24
+census (Newtonian circular inspiral to each source-frame Schwarzschild
+ISCO) with one merger per present-day SMBH, not an ε·ρ product.
+A benchmark is one observationally or theoretically motivated choice; an
+upper limit is the maximum over stated inputs. Amplitudes scale as A ∝ √ρ
 relative to fiducial values. All values from the paper's audited
-step3-numbers.json.
+reproducibility/results/step3-numbers.json (Table 1 of the paper).
 """)
 
 # =============================================================================
@@ -1027,28 +1021,30 @@ for i, name in enumerate(selected_pops):
 st.markdown("---")
 st.subheader("SMBHB Benchmark vs PTA Measurements")
 st.markdown("""
-**SMBHB benchmark and conditional ceiling (erratum-corrected dynamical mass
-function, participating domain M₁ ≥ 10⁸ M☉):**
+**SMBHB benchmark and physical ceiling (full LM24 census, with erratum):**
 
-- One-pass population-moment benchmark: **A_bench = 2.06 × 10⁻¹⁵** at f_ref = 1 yr⁻¹
-- Conditional reference-frequency ceiling: **A_ceil = 2.23 × 10⁻¹⁵**
+- One-pass population-moment benchmark: **A_bench = 2.11 +0.43/−0.32 × 10⁻¹⁵**
+  at f_ref = 1 yr⁻¹ (one merger per present-day SMBH, f_merge = 1)
+- Physical ceiling: **A_ceil = 3.76 +0.76/−0.56 × 10⁻¹⁵**, obtained by setting
+  q = 1 and z → 0 and including the complete SZQ24 repeated-merger hierarchy
+  (together a factor 1.05 × 1.12 × 2.70 = 3.18 in h_c²;
+  [Sato-Polito, Zaldarriaga & Quataert 2024](https://doi.org/10.1103/PhysRevD.110.063020))
 - NANOGrav revised customized-noise (CNM) amplitude: **2.1 (90%: 1.6–2.7) × 10⁻¹⁵**
   ([Larsen et al. 2026](https://arxiv.org/abs/2606.28571); [Agarwal et al. 2026](https://arxiv.org/abs/2606.28554))
 
 | PTA | A (×10⁻¹⁵) at γ=13/3 | A / A_bench |
 |-----|------------|------------------------|
-| CPTA | 2.0 +0.9/-1.9 dex (95%) | 0.97 |
-| PPTA DR3 | 2.04 ± 0.24 | 0.99 |
-| NANOGrav 15yr (CNM) | 2.1 (90%: 1.6–2.7) | 1.02 |
-| EPTA DR2 | 2.5 ± 0.7 | 1.22 |
-| MPTA | 4.8 +0.8/-0.9 | 2.33 |
+| CPTA | 2.0 +0.9/-1.9 dex (95%) | 0.95 |
+| PPTA DR3 | 2.04 ± 0.24 | 0.97 |
+| NANOGrav 15yr (CNM) | 2.1 (90%: 1.6–2.7) | 1.00 |
+| EPTA DR2 | 2.5 ± 0.7 | 1.19 |
+| MPTA | 4.8 +0.8/-0.9 | 2.28 |
 
-Within this fixed population family, the central NANOGrav CNM amplitude maps to
-a merged mass fraction **f_merge = 1.04 ≃ 1**: the measured background saturates
-the one-pass energetic budget of the M₁ ≥ 10⁸ M☉ population. Amplitudes above
-the conditional ceiling require conditions outside the stated domain (e.g.
-scatter in scaling relations, additional participating mass, cosmic variance
-from nearby massive binaries, or mis-modeled pulsar noise).
+Propagating the NANOGrav CNM amplitude through the LM24 census gives the
+SMBHB merger factor **f_merge = 1.11 +1.35/−0.63 (90%)**: the 90% interval
+includes f_merge = 1, so the measured background is consistent with one
+merger per present-day SMBH. All published PTA amplitudes fit comfortably
+within the physical ceiling of 3.76 × 10⁻¹⁵.
 """)
 
 # =============================================================================
@@ -1092,6 +1088,6 @@ st.markdown("---")
 st.markdown("""
 **Citation:** If you use figures from this tool, please cite:
 
-> Mingarelli, C. M. F. (2026), "Energetic Ceilings on Astrophysical Gravitational-Wave Backgrounds",
+> Mingarelli, C. M. F. (2026), "Energetic Ceilings and Benchmarks of Astrophysical Gravitational-Wave Backgrounds",
 > [arXiv:2601.18859](https://arxiv.org/abs/2601.18859)
 """)
