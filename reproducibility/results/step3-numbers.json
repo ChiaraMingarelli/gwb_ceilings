@@ -1,0 +1,1204 @@
+{
+  "constants": {
+    "H0_km_s_Mpc": 67.4,
+    "Omega_m": 0.3,
+    "Omega_Lambda": 0.7,
+    "rho_crit_msun_mpc3": 126074416401.85112,
+    "rho_star_msun_mpc3": 630372082.0092556,
+    "rho_bh_lm24_msun_mpc3": 1800000.0,
+    "rho_star_over_rho_bh_lm24": 350.2067122273642
+  },
+  "core_physics_audit": {
+    "peters_bns_equal_mass_to_1500_hz_efficiency": 0.020206195958653868,
+    "schwarzschild_isco_radius_gm_c2": 6.0,
+    "kerr_chi0p7_isco_radius_gm_c2": 3.3931284701816304,
+    "kerr_chi0p7_mass_for_400_nhz_msun": 23244718672.164585,
+    "smbhb_schwarzschild_isco_support_at_1yr": {
+      "spin": 0.0,
+      "isco_radius_gm_c2": 6.0,
+      "mass_limit_at_1yr_z0_msun": 138760086136.09927,
+      "primary_minimum_mass_msun": null,
+      "primary_mass_selection": "none; full analytic LM24 moment",
+      "supported_hc_at_1yr": 2.1077755754404172e-15,
+      "retained_hc_squared_fraction": 0.9999096427602052,
+      "fractional_hc_change": -4.5179640497328144e-05
+    }
+  },
+  "smbhb": {
+    "rho_fit_msun_mpc3": 1734592.5811619647,
+    "i53_fit_msun53_mpc3": 1699369757641.7725,
+    "primary_minimum_mass_msun": null,
+    "primary_mass_selection": "none; full analytic LM24 moment",
+    "minimum_total_mass_benchmark_msun": null,
+    "conditional_ceiling_mass_ratio": 1.0,
+    "minimum_total_mass_conditional_ceiling_msun": null,
+    "eta_moment_unrestricted": 0.2384987783061628,
+    "eta_moment_participating_i53": 0.2384987783061628,
+    "eta_moment_participating_mass": 0.2384987783061628,
+    "retained_i53_fraction_benchmark": 1.0,
+    "retained_i53_eta_factor_benchmark": 0.2384987783061628,
+    "retained_i53_eta_factor_conditional_ceiling": 0.25,
+    "retained_mass_density_fraction_benchmark": 1.0,
+    "retained_mass_density_fraction_conditional_ceiling": 1.0,
+    "participant_mass_density_benchmark_msun_mpc3": 1800000.0,
+    "participant_mass_density_conditional_ceiling_msun_mpc3": 1800000.0,
+    "redshift_moment": 0.8898086213137295,
+    "benchmark_A_1yr": 2.1078708082857504e-15,
+    "conditional_ceiling_A_1yr": 2.2878239901827213e-15,
+    "equal_mass_latest_generation_A_1yr": 2.2878239901827213e-15,
+    "szq_hierarchy_hc2_boost": 2.7024143839193155,
+    "szq_hierarchy_strain_boost": 1.6439021819802162,
+    "repeated_merger_ceiling_A_1yr": 3.7609588494480605e-15,
+    "cnm_central_A_1yr": 2.1e-15,
+    "cnm_low_A_1yr": 1.6e-15,
+    "cnm_high_A_1yr": 2.7e-15,
+    "fmerge_cnm_central_fixed_shape": 0.9925459250909402,
+    "fmerge_cnm_low_fixed_shape": 0.5761717841797749,
+    "fmerge_cnm_high_fixed_shape": 1.6407391822931872,
+    "shape_conditional_product_msun_mpc3": 1786582.6651636923
+  },
+  "szq24_population_moment_audit": {
+    "mass_scale_msun": 58518920.65255692,
+    "rho_bh_msun_mpc3": 454460.3468296747,
+    "i53_msun53_mpc3": 524703469666.29663,
+    "eta_log_uniform": 0.17766592441496662,
+    "redshift_moment": 0.89411852724508,
+    "fiducial_log_uniform_one_pass_A_1yr": 9.947815858081906e-16,
+    "equal_mass_over_log_uniform_hc2_ratio": 1.4071353346074726,
+    "equal_mass_over_log_uniform_strain_ratio": 1.1862273536752863,
+    "equal_mass_fiducial_redshift_one_pass_A_1yr": 1.1800371280181547e-15,
+    "equal_mass_z0_one_pass_A_1yr": 1.2479526996375898e-15,
+    "fiducial_plus_hierarchy_A_1yr": 1.6353236195038243e-15,
+    "equal_mass_fiducial_redshift_infinite_A_1yr": 1.9398656095667123e-15,
+    "equal_mass_z0_infinite_A_1yr": 2.051512165942335e-15,
+    "hierarchy_hc2_boost": 2.7024143839193155,
+    "hierarchy_strain_boost": 1.6439021819802162,
+    "literal_eq21_hc2": 1.2345935691823268e-30,
+    "literal_eq21_A_1yr": 1.111122661627566e-15,
+    "literal_eq21_over_direct_strain_ratio": 1.1169513765424763,
+    "literal_eq21_over_direct_hc2_ratio": 1.2475803775601328,
+    "normalization_status": "unresolved: literal SZQ24 Eq. (21) exceeds the direct population moment",
+    "scope": "full SZQ24 VDF census with no primary-mass participation cut"
+  },
+  "channels": {
+    "emri_benchmark": {
+      "key": "emri_benchmark",
+      "label": "EMRI",
+      "benchmark_or_ceiling": "benchmark",
+      "epsilon": 0.05,
+      "history": {
+        "rho_src_msun_mpc3": 63.03720820092557,
+        "redshift": 0.0,
+        "description": "Scalar benchmark; published all-sky rate lacks the redshift distribution needed for a unique conversion"
+      },
+      "f_ref_hz": 0.01,
+      "shape_kind": "inspiral",
+      "f_max_hz": 0.01,
+      "total_mass_msun": null,
+      "eta": null,
+      "chi": null,
+      "provenance": "NSC reservoir and Bonetti--Sesana M1-scale processing",
+      "history_type": "FixedRedshiftHistory",
+      "rho_src_msun_mpc3": 63.03720820092557,
+      "redshift_min": 0.0,
+      "redshift_max": 0.0,
+      "mass_weighted_mean_redshift": 0.0,
+      "mean_energy_dilution": 1.0,
+      "present_budget": 2.5000000000000007e-11,
+      "hc_at_reference": 3.4763979324143e-22,
+      "omega_at_reference": 1.666666666666667e-11
+    },
+    "emri_closed_pool_ceiling": {
+      "key": "emri_closed_pool_ceiling",
+      "label": "EMRI",
+      "benchmark_or_ceiling": "ceiling",
+      "epsilon": 0.05,
+      "history": {
+        "rho_src_msun_mpc3": 18911.16246027767,
+        "redshift": 0.0,
+        "description": "Unreplenished NSC with the Babak et al. stellar-BH mass fraction; other benchmark inputs fixed"
+      },
+      "f_ref_hz": 0.01,
+      "shape_kind": "inspiral",
+      "f_max_hz": 0.01,
+      "total_mass_msun": null,
+      "eta": null,
+      "chi": null,
+      "provenance": "Conditional closed-pool NSC inventory ceiling",
+      "history_type": "FixedRedshiftHistory",
+      "rho_src_msun_mpc3": 18911.16246027767,
+      "redshift_min": 0.0,
+      "redshift_max": 0.0,
+      "mass_weighted_mean_redshift": 0.0,
+      "mean_energy_dilution": 1.0,
+      "present_budget": 7.500000000000001e-09,
+      "hc_at_reference": 6.0212978462689636e-21,
+      "omega_at_reference": 5e-09
+    },
+    "agn_imri_benchmark": {
+      "key": "agn_imri_benchmark",
+      "label": "AGN--IMRI",
+      "benchmark_or_ceiling": "benchmark",
+      "epsilon": 0.05,
+      "history": {
+        "rate_gpc3_yr": 30.4,
+        "mean_mass_msun": 60.0,
+        "duration_gyr": 10.0,
+        "rate_anchor_redshift": 0.2,
+        "rate_evolution_kappa": 0.0,
+        "processing_fraction": 0.03,
+        "max_redshift": null,
+        "samples": 801,
+        "description": "AGN pipeline with constant source-frame rate over T_eff interpreted as a lookback interval"
+      },
+      "f_ref_hz": 0.003,
+      "shape_kind": "inspiral",
+      "f_max_hz": 0.04,
+      "total_mass_msun": null,
+      "eta": null,
+      "chi": null,
+      "provenance": "Explicit AGN pipeline benchmark mass delivery",
+      "history_type": "RateHistory",
+      "rho_src_msun_mpc3": 547.2,
+      "redshift_min": 0.0,
+      "redshift_max": 1.6618300919826994,
+      "mass_weighted_mean_redshift": 0.5752481231183273,
+      "mean_energy_dilution": 0.6834588528399483,
+      "present_budget": 1.4832060894970307e-10,
+      "hc_at_reference": 1.3460004546947788e-21,
+      "omega_at_reference": 2.248654365449678e-11
+    },
+    "agn_imri_ceiling": {
+      "key": "agn_imri_ceiling",
+      "label": "AGN--IMRI",
+      "benchmark_or_ceiling": "ceiling",
+      "epsilon": 0.05,
+      "history": {
+        "rate_gpc3_yr": 49.4,
+        "mean_mass_msun": 150.0,
+        "duration_gyr": 13.0,
+        "rate_anchor_redshift": 0.2,
+        "rate_evolution_kappa": 0.0,
+        "processing_fraction": 1.0,
+        "max_redshift": null,
+        "samples": 801,
+        "description": "AGN pipeline with constant source-frame rate over T_eff interpreted as a lookback interval"
+      },
+      "f_ref_hz": 0.003,
+      "shape_kind": "inspiral",
+      "f_max_hz": 0.04,
+      "total_mass_msun": null,
+      "eta": null,
+      "chi": null,
+      "provenance": "Maximum over the declared rectangular domain",
+      "history_type": "RateHistory",
+      "rho_src_msun_mpc3": 96329.99999999999,
+      "redshift_min": 0.0,
+      "redshift_max": 5.837196099775165,
+      "mass_weighted_mean_redshift": 1.1307040189660853,
+      "mean_energy_dilution": 0.5877176035364331,
+      "present_budget": 2.2452944207256837e-08,
+      "hc_at_reference": 1.7300014757095783e-20,
+      "omega_at_reference": 3.7147127833147702e-09
+    },
+    "bns_benchmark": {
+      "key": "bns_benchmark",
+      "label": "BNS",
+      "benchmark_or_ceiling": "benchmark",
+      "epsilon": 0.02,
+      "history": {
+        "rate_gpc3_yr": 59.3,
+        "mean_mass_msun": 2.8,
+        "duration_gyr": 10.0,
+        "rate_anchor_redshift": 0.0,
+        "rate_evolution_kappa": 0.0,
+        "processing_fraction": 1.0,
+        "max_redshift": null,
+        "samples": 801,
+        "description": "GWTC-5 FullPop median; constant rate over 10 Gyr"
+      },
+      "f_ref_hz": 0.1,
+      "shape_kind": "inspiral",
+      "f_max_hz": 1500.0,
+      "total_mass_msun": null,
+      "eta": null,
+      "chi": null,
+      "provenance": "GWTC-5 FullPop median rate; 10-Gyr constant-rate history",
+      "history_type": "RateHistory",
+      "rho_src_msun_mpc3": 1660.3999999999999,
+      "redshift_min": 0.0,
+      "redshift_max": 1.6618300919826994,
+      "mass_weighted_mean_redshift": 0.5752481231183271,
+      "mean_energy_dilution": 0.6834588528399481,
+      "present_budget": 1.800230548977243e-10,
+      "hc_at_reference": 4.277390831170633e-24,
+      "omega_at_reference": 2.5231766214136393e-13
+    },
+    "bns_ceiling": {
+      "key": "bns_ceiling",
+      "label": "BNS",
+      "benchmark_or_ceiling": "ceiling",
+      "epsilon": 0.02,
+      "history": {
+        "rate_gpc3_yr": 154.7,
+        "mean_mass_msun": 2.8,
+        "duration_gyr": 10.0,
+        "rate_anchor_redshift": 0.0,
+        "rate_evolution_kappa": 0.0,
+        "processing_fraction": 1.0,
+        "max_redshift": null,
+        "samples": 801,
+        "description": "GWTC-5 union-of-model 90-percent endpoint; constant rate over 10 Gyr"
+      },
+      "f_ref_hz": 0.1,
+      "shape_kind": "inspiral",
+      "f_max_hz": 1500.0,
+      "total_mass_msun": null,
+      "eta": null,
+      "chi": null,
+      "provenance": "GWTC-5 union-of-model 90-percent rate upper endpoint; fixed history",
+      "history_type": "RateHistory",
+      "rho_src_msun_mpc3": 4331.5999999999985,
+      "redshift_min": 0.0,
+      "redshift_max": 1.6618300919826994,
+      "mass_weighted_mean_redshift": 0.5752481231183272,
+      "mean_energy_dilution": 0.6834588528399482,
+      "present_budget": 4.69638559741618e-10,
+      "hc_at_reference": 6.908706519487097e-24,
+      "omega_at_reference": 6.582384879134739e-13
+    },
+    "popiii_benchmark": {
+      "key": "popiii_benchmark",
+      "label": "Pop III BBH",
+      "benchmark_or_ceiling": "benchmark",
+      "epsilon": 0.05,
+      "history": {
+        "processing_fraction": 0.01,
+        "redshift_min": 4.0,
+        "redshift_max": 30.0,
+        "sfrd_a": 765.7,
+        "sfrd_b": -5.92,
+        "sfrd_c": 12.83,
+        "sfrd_d": -8.55,
+        "samples": 1201,
+        "description": "Liu--Bromm SFRD over z=4--30; one-percent prompt-merger mapping"
+      },
+      "f_ref_hz": 0.1,
+      "shape_kind": "phenomb",
+      "f_max_hz": null,
+      "total_mass_msun": 100.0,
+      "eta": 0.25,
+      "chi": 0.0,
+      "provenance": "Liu--Bromm formation history; one-percent prompt 50+50-Msun nonspinning merger model",
+      "history_type": "PopIIIFormationHistory",
+      "rho_src_msun_mpc3": 733.2211228627597,
+      "redshift_min": 4.0,
+      "redshift_max": 30.0,
+      "mass_weighted_mean_redshift": 8.696861481939388,
+      "mean_energy_dilution": 0.11444369160823656,
+      "present_budget": 3.327896906462243e-11,
+      "hc_at_reference": 6.803213932893254e-24,
+      "omega_at_reference": 6.382899987198162e-13,
+      "source_f_merg_hz": 72.8738816716477,
+      "source_f_ring_hz": 165.7581300375673,
+      "source_sigma_hz": 38.45031243042488,
+      "source_f_cut_hz": 226.35597429209065,
+      "at_mean_redshift_f_merg_hz": 7.515202914610759,
+      "at_mean_redshift_f_ring_hz": 17.093997923585416,
+      "at_mean_redshift_sigma_hz": 3.9652327200960236,
+      "at_mean_redshift_f_cut_hz": 23.34322035162444
+    },
+    "popiii_ceiling": {
+      "key": "popiii_ceiling",
+      "label": "Pop III BBH",
+      "benchmark_or_ceiling": "ceiling",
+      "epsilon": 0.05,
+      "history": {
+        "processing_fraction": 0.01,
+        "redshift_min": 4.0,
+        "redshift_max": 30.0,
+        "sfrd_a": 2088.592311717456,
+        "sfrd_b": -5.92,
+        "sfrd_c": 12.83,
+        "sfrd_d": -8.55,
+        "samples": 1201,
+        "description": "Liu--Bromm redshift shape normalized to the Planck-calibrated Pop-III mass endpoint; one-percent prompt-merger mapping"
+      },
+      "f_ref_hz": 0.1,
+      "shape_kind": "phenomb",
+      "f_max_hz": null,
+      "total_mass_msun": 100.0,
+      "eta": 0.25,
+      "chi": 0.0,
+      "provenance": "Planck-calibrated Pop-III mass endpoint from Inayoshi et al.; other benchmark inputs fixed",
+      "history_type": "PopIIIFormationHistory",
+      "rho_src_msun_mpc3": 2000.0000000000005,
+      "redshift_min": 4.0,
+      "redshift_max": 30.0,
+      "mass_weighted_mean_redshift": 8.696861481939386,
+      "mean_energy_dilution": 0.11444369160823654,
+      "present_budget": 9.077471454910992e-11,
+      "hc_at_reference": 1.1235997706702658e-23,
+      "omega_at_reference": 1.7410573122271832e-12,
+      "source_f_merg_hz": 72.8738816716477,
+      "source_f_ring_hz": 165.7581300375673,
+      "source_sigma_hz": 38.45031243042488,
+      "source_f_cut_hz": 226.35597429209065,
+      "at_mean_redshift_f_merg_hz": 7.515202914610761,
+      "at_mean_redshift_f_ring_hz": 17.09399792358542,
+      "at_mean_redshift_sigma_hz": 3.9652327200960245,
+      "at_mean_redshift_f_cut_hz": 23.343220351624446
+    },
+    "bbh_benchmark": {
+      "key": "bbh_benchmark",
+      "label": "sBBH",
+      "benchmark_or_ceiling": "benchmark",
+      "epsilon": 0.05,
+      "history": {
+        "rate_gpc3_yr": 30.4,
+        "mean_mass_msun": 21.686608918452965,
+        "duration_gyr": 10.0,
+        "rate_anchor_redshift": 0.2,
+        "rate_evolution_kappa": 0.0,
+        "processing_fraction": 1.0,
+        "max_redshift": null,
+        "samples": 801,
+        "description": "GWTC-5 Default-BBH median; constant rate over 10 Gyr"
+      },
+      "f_ref_hz": 25.0,
+      "shape_kind": "phenomb",
+      "f_max_hz": null,
+      "total_mass_msun": 21.686608918452965,
+      "eta": 0.25,
+      "chi": 0.0,
+      "provenance": "GWTC-5 Default-BBH median rate and representative mass from the median population model; 10-Gyr constant-rate history",
+      "history_type": "RateHistory",
+      "rho_src_msun_mpc3": 6592.729111209701,
+      "redshift_min": 0.0,
+      "redshift_max": 1.6618300919826994,
+      "mass_weighted_mean_redshift": 0.5752481231183272,
+      "mean_energy_dilution": 0.6834588528399481,
+      "present_budget": 1.786983911577224e-09,
+      "hc_at_reference": 4.031480337458788e-25,
+      "omega_at_reference": 1.4008734131936302e-10,
+      "source_f_merg_hz": 336.0317048445499,
+      "source_f_ring_hz": 764.3340213348202,
+      "source_sigma_hz": 177.29979165948723,
+      "source_f_cut_hz": 1043.7591932572093,
+      "at_mean_redshift_f_merg_hz": 213.31985730562164,
+      "at_mean_redshift_f_ring_hz": 485.21500207964766,
+      "at_mean_redshift_sigma_hz": 112.55356477334401,
+      "at_mean_redshift_f_cut_hz": 662.5998647063969
+    },
+    "bbh_ceiling": {
+      "key": "bbh_ceiling",
+      "label": "sBBH",
+      "benchmark_or_ceiling": "ceiling",
+      "epsilon": 0.0801,
+      "history": {
+        "rate_gpc3_yr": 49.4,
+        "mean_mass_msun": 21.686608918452965,
+        "duration_gyr": 10.0,
+        "rate_anchor_redshift": 0.2,
+        "rate_evolution_kappa": 0.0,
+        "processing_fraction": 1.0,
+        "max_redshift": null,
+        "samples": 801,
+        "description": "GWTC-5 union-of-model 90-percent endpoint; constant rate over 10 Gyr"
+      },
+      "f_ref_hz": 25.0,
+      "shape_kind": "phenomb",
+      "f_max_hz": null,
+      "total_mass_msun": 21.686608918452965,
+      "eta": 0.25,
+      "chi": 0.7,
+      "provenance": "GWTC-5 union-of-model rate upper endpoint; q=1, chi1=chi2=+0.7; 10-Gyr fixed history",
+      "history_type": "RateHistory",
+      "rho_src_msun_mpc3": 10713.184805715764,
+      "redshift_min": 0.0,
+      "redshift_max": 1.6618300919826994,
+      "mass_weighted_mean_redshift": 0.5752481231183272,
+      "mean_energy_dilution": 0.6834588528399482,
+      "present_budget": 4.65196586781341e-09,
+      "hc_at_reference": 5.143065936497245e-25,
+      "omega_at_reference": 2.2798904818503782e-10,
+      "source_f_merg_hz": 387.5894215709761,
+      "source_f_ring_hz": 997.5051247974582,
+      "source_sigma_hz": 160.57127903630126,
+      "source_f_cut_hz": 1192.521225843632,
+      "at_mean_redshift_f_merg_hz": 246.04975932535152,
+      "at_mean_redshift_f_ring_hz": 633.2368280006698,
+      "at_mean_redshift_sigma_hz": 101.93395991384381,
+      "at_mean_redshift_f_cut_hz": 757.0370713935165
+    }
+  },
+  "efficiency_checks": {
+    "bns_inspiral_to_1500_hz": 0.020206195958653868,
+    "bbh_population_weighting": {
+      "samples": 300000.0,
+      "lambda_low_mass_peak": 0.7432998952959551,
+      "mean_total_mass_msun": 21.686608918452965,
+      "rate_weighted_mean_efficiency": 0.04746340654412061,
+      "mass_weighted_mean_efficiency": 0.04708091160573049,
+      "equal_mass_nonspinning_efficiency": 0.04838790573395908,
+      "equal_mass_chi0p7_efficiency": 0.08050545889779426
+    },
+    "bbh_benchmark_adopted": 0.05,
+    "jimenez_forteza_nonspinning_equal_mass": 0.04841159375000001,
+    "aligned_spin_nr_fit": "Husa et al. 2016 dependency-free IMRPhenomD fit; the Jimenez-Forteza et al. 2016 nonspinning polynomial is retained as an independent equal-mass cross-check",
+    "bbh_q1_chi0p7_NR": 0.08050545889779426,
+    "capture_schwarzschild_test_particle": 0.057190958417936644,
+    "capture_adopted": 0.05
+  },
+  "nsc_density_audit": {
+    "stellar_density_from_gsmf_msun_mpc3": 222616482.74237257,
+    "eta_nsc_unit_occupation_median_relation": 0.0008793442967200876,
+    "lognormal_scatter_boost_0p6dex": 2.596960336855569,
+    "eta_nsc_unit_occupation_scatter_mean": 0.0022836222610222224,
+    "eta_nsc_adopted_fiducial": 0.001,
+    "interpretation": "factor-of-few estimate conditional on the NSC-host relation, its scatter, galaxy occupation, and integration range; not a universal hard upper bound"
+  },
+  "emri_rate_proxy_audit": {
+    "z_max": 4.5,
+    "comoving_volume_mpc3": 1974280533992.4705,
+    "duration_proxy_gyr": 10.0,
+    "models": {
+      "M1": {
+        "all_sky_rate_per_observer_year": 1600.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 81.04218080722373,
+        "f_merge_uniform_volume_proxy": 0.0001285624524311243
+      },
+      "M2": {
+        "all_sky_rate_per_observer_year": 1400.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 70.91190820632076,
+        "f_merge_uniform_volume_proxy": 0.00011249214587723377
+      },
+      "M3": {
+        "all_sky_rate_per_observer_year": 2770.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 140.3042755225061,
+        "f_merge_uniform_volume_proxy": 0.000222573745771384
+      },
+      "M4": {
+        "all_sky_rate_per_observer_year": 520.0,
+        "compact_object_mass_msun": 30.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 79.01612628704314,
+        "f_merge_uniform_volume_proxy": 0.00012534839112034621
+      },
+      "M5": {
+        "all_sky_rate_per_observer_year": 140.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 7.091190820632076,
+        "f_merge_uniform_volume_proxy": 1.1249214587723377e-05
+      },
+      "M6": {
+        "all_sky_rate_per_observer_year": 2080.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 105.35483504939084,
+        "f_merge_uniform_volume_proxy": 0.0001671311881604616
+      },
+      "M7": {
+        "all_sky_rate_per_observer_year": 15800.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 800.2915354713343,
+        "f_merge_uniform_volume_proxy": 0.0012695542177573527
+      },
+      "M8": {
+        "all_sky_rate_per_observer_year": 180.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 9.11724534081267,
+        "f_merge_uniform_volume_proxy": 1.4463275898501486e-05
+      },
+      "M9": {
+        "all_sky_rate_per_observer_year": 1530.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 77.49658539690769,
+        "f_merge_uniform_volume_proxy": 0.00012293784513726263
+      },
+      "M10": {
+        "all_sky_rate_per_observer_year": 1520.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 76.99007176686254,
+        "f_merge_uniform_volume_proxy": 0.0001221343298095681
+      },
+      "M11": {
+        "all_sky_rate_per_observer_year": 13.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 0.6584677190586928,
+        "f_merge_uniform_volume_proxy": 1.044569926002885e-06
+      },
+      "M12": {
+        "all_sky_rate_per_observer_year": 20000.0,
+        "compact_object_mass_msun": 10.0,
+        "rho_src_uniform_volume_proxy_msun_mpc3": 1013.0272600902966,
+        "f_merge_uniform_volume_proxy": 0.001607030655389054
+      }
+    },
+    "adopted_f_merge_benchmark": 0.0001,
+    "closed_pool_f_merge": 0.03,
+    "status": "rate conversion motivates the benchmark only; the separate closed-pool ceiling assumes no NSC replenishment"
+  },
+  "agn_pipeline_audit": {
+    "benchmark_point": {
+      "kappa_im": 0.3,
+      "f_agn": 0.1,
+      "rate_bbh_gpc3_yr": 30.4,
+      "mean_bbh_mass_msun": 60.0,
+      "t_eff_gyr": 10.0
+    },
+    "benchmark_rho_bbh_proc_msun_mpc3": 18240.0,
+    "benchmark_source_fraction": 0.03,
+    "benchmark_rho_imr_msun_mpc3": 547.1999999999999,
+    "domain": {
+      "kappa_im": [
+        0.05,
+        1.0
+      ],
+      "f_agn": [
+        0.01,
+        1.0
+      ],
+      "rate_bbh_gpc3_yr": [
+        27.5,
+        49.4
+      ],
+      "mean_bbh_mass_msun": [
+        20.0,
+        150.0
+      ],
+      "t_eff_gyr": [
+        1.0,
+        13.0
+      ]
+    },
+    "corner_count": 32,
+    "maximizing_point": {
+      "kappa_im": 1.0,
+      "f_agn": 1.0,
+      "rate_bbh_gpc3_yr": 49.4,
+      "mean_bbh_mass_msun": 150.0,
+      "t_eff_gyr": 13.0
+    },
+    "maximum_rho_imr_msun_mpc3": 96330.0,
+    "maximum_over_central_rho_bh": 0.053516666666666664,
+    "broad_census_guardrail_satisfied": true,
+    "status": "maximum over declared Cartesian domain; not a joint-posterior maximum"
+  },
+  "rate_only_benchmark_intervals": {
+    "scope": "Model-specific marginal 90-percent merger-rate credible intervals only; masses, efficiencies, spectra, and 10-Gyr histories are held fixed.",
+    "scaling": "rho_src, Omega_ref, and integrated energy scale as R; h_c scales as sqrt(R). Available mass and source fraction follow the channel-specific definitions reported below.",
+    "channels": {
+      "agn_imri_benchmark": {
+        "rate_model": "GWTC-5 Default-BBH",
+        "available_mass_definition": "rho_BBH,proc = R_BBH <M_BBH> T_eff",
+        "source_fraction_definition": "f_AGN kappa_IM",
+        "coverage": "90-percent marginal credible interval",
+        "other_inputs_held_fixed": true,
+        "endpoints": {
+          "low": {
+            "rate_gpc3_yr": 25.0,
+            "available_mass_msun_mpc3": 15000.0,
+            "rho_src_msun_mpc3": 450.0,
+            "source_fraction": 0.03,
+            "hc_at_reference": 1.2206142031479254e-21,
+            "omega_at_reference": 1.8492223400079648e-11,
+            "present_integral_omega_dlnf": 1.2197418499153207e-10
+          },
+          "median": {
+            "rate_gpc3_yr": 30.4,
+            "available_mass_msun_mpc3": 18240.0,
+            "rho_src_msun_mpc3": 547.2,
+            "source_fraction": 0.03,
+            "hc_at_reference": 1.3460004546947788e-21,
+            "omega_at_reference": 2.248654365449678e-11,
+            "present_integral_omega_dlnf": 1.4832060894970307e-10
+          },
+          "high": {
+            "rate_gpc3_yr": 36.9,
+            "available_mass_msun_mpc3": 22140.0,
+            "rho_src_msun_mpc3": 664.2,
+            "source_fraction": 0.03,
+            "hc_at_reference": 1.4829332326842724e-21,
+            "omega_at_reference": 2.729452173851748e-11,
+            "present_integral_omega_dlnf": 1.8003389704750138e-10
+          }
+        }
+      },
+      "bns_benchmark": {
+        "rate_model": "GWTC-5 FullPop BNS",
+        "available_mass_definition": "rho_star",
+        "source_fraction_definition": "rho_src / rho_star",
+        "coverage": "90-percent marginal credible interval",
+        "other_inputs_held_fixed": true,
+        "endpoints": {
+          "low": {
+            "rate_gpc3_yr": 15.4,
+            "available_mass_msun_mpc3": 630372082.0092556,
+            "rho_src_msun_mpc3": 431.19999999999993,
+            "source_fraction": 6.84040445803989e-07,
+            "hc_at_reference": 2.1797764082614108e-24,
+            "omega_at_reference": 6.552600332170324e-14,
+            "present_integral_omega_dlnf": 4.675134983853211e-11
+          },
+          "median": {
+            "rate_gpc3_yr": 59.3,
+            "available_mass_msun_mpc3": 630372082.0092556,
+            "rho_src_msun_mpc3": 1660.3999999999999,
+            "source_fraction": 2.633999898453023e-06,
+            "hc_at_reference": 4.277390831170633e-24,
+            "omega_at_reference": 2.5231766214136393e-13,
+            "present_integral_omega_dlnf": 1.800230548977243e-10
+          },
+          "high": {
+            "rate_gpc3_yr": 154.7,
+            "available_mass_msun_mpc3": 630372082.0092556,
+            "rho_src_msun_mpc3": 4331.5999999999985,
+            "source_fraction": 6.871497205576433e-06,
+            "hc_at_reference": 6.908706519487097e-24,
+            "omega_at_reference": 6.582384879134739e-13,
+            "present_integral_omega_dlnf": 4.69638559741618e-10
+          }
+        }
+      },
+      "bbh_benchmark": {
+        "rate_model": "GWTC-5 Default-BBH",
+        "available_mass_definition": "rho_star",
+        "source_fraction_definition": "rho_src / rho_star",
+        "coverage": "90-percent marginal credible interval",
+        "other_inputs_held_fixed": true,
+        "endpoints": {
+          "low": {
+            "rate_gpc3_yr": 25.0,
+            "available_mass_msun_mpc3": 630372082.0092556,
+            "rho_src_msun_mpc3": 5421.652229613241,
+            "source_fraction": 8.600717551342375e-06,
+            "hc_at_reference": 3.655929047014807e-25,
+            "omega_at_reference": 1.1520340569026558e-10,
+            "present_integral_omega_dlnf": 1.4695591378102171e-09
+          },
+          "median": {
+            "rate_gpc3_yr": 30.4,
+            "available_mass_msun_mpc3": 630372082.0092556,
+            "rho_src_msun_mpc3": 6592.729111209701,
+            "source_fraction": 1.045847254243233e-05,
+            "hc_at_reference": 4.031480337458788e-25,
+            "omega_at_reference": 1.4008734131936302e-10,
+            "present_integral_omega_dlnf": 1.786983911577224e-09
+          },
+          "high": {
+            "rate_gpc3_yr": 36.9,
+            "available_mass_msun_mpc3": 630372082.0092556,
+            "rho_src_msun_mpc3": 8002.358690909143,
+            "source_fraction": 1.2694659105781346e-05,
+            "hc_at_reference": 4.44161526727457e-25,
+            "omega_at_reference": 1.7004022679883218e-10,
+            "present_integral_omega_dlnf": 2.16906928740788e-09
+          }
+        }
+      }
+    }
+  },
+  "history_sensitivity_audit": {
+    "traceability_no_dilution": {
+      "agn_imri_benchmark": {
+        "rho_src_msun_mpc3": 547.2,
+        "hc_at_reference": 1.4398034448334595e-21,
+        "explicit_history_hc_at_reference": 1.3460004546947788e-21,
+        "explicit_over_no_dilution_amplitude_ratio": 0.934850141888964
+      },
+      "agn_imri_ceiling": {
+        "rho_src_msun_mpc3": 96329.99999999999,
+        "hc_at_reference": 1.9103412086110323e-20,
+        "explicit_history_hc_at_reference": 1.7300014757095783e-20,
+        "explicit_over_no_dilution_amplitude_ratio": 0.9055981559270372
+      },
+      "bns_benchmark": {
+        "rho_src_msun_mpc3": 1660.3999999999999,
+        "hc_at_reference": 4.575482892399961e-24,
+        "explicit_history_hc_at_reference": 4.277390831170633e-24,
+        "explicit_over_no_dilution_amplitude_ratio": 0.9348501418889644
+      },
+      "bns_ceiling": {
+        "rho_src_msun_mpc3": 4331.5999999999985,
+        "hc_at_reference": 7.390175398088208e-24,
+        "explicit_history_hc_at_reference": 6.908706519487097e-24,
+        "explicit_over_no_dilution_amplitude_ratio": 0.9348501418889646
+      },
+      "bbh_benchmark": {
+        "rho_src_msun_mpc3": 6592.729111209701,
+        "hc_at_reference": 4.358155099972893e-25,
+        "explicit_history_hc_at_reference": 4.031480337458788e-25,
+        "explicit_over_no_dilution_amplitude_ratio": 0.9250428782316313
+      },
+      "bbh_ceiling": {
+        "rho_src_msun_mpc3": 10713.184805715764,
+        "hc_at_reference": 5.507120333236581e-25,
+        "explicit_history_hc_at_reference": 5.143065936497245e-25,
+        "explicit_over_no_dilution_amplitude_ratio": 0.9338938728935712
+      }
+    },
+    "bbh_rate_evolution": {
+      "rate_interval_gpc3_yr": [
+        25.0,
+        30.4,
+        36.9
+      ],
+      "kappa_z_interval": [
+        1.8,
+        2.5,
+        3.2
+      ],
+      "ten_gyr": {
+        "rho_src_msun_mpc3": 15020.59594621565,
+        "source_fraction": 2.3828142734904787e-05,
+        "mean_energy_dilution": 0.5662318340120442,
+        "hc_at_reference": 5.861993563799711e-25,
+        "omega_at_reference": 2.961832372370812e-10,
+        "present_integral_omega_dlnf": 3.373063240471477e-09
+      },
+      "rate_only_at_median_kappa": {
+        "low": {
+          "rate_gpc3_yr": 25.0,
+          "rho_src_msun_mpc3": 12352.463771558923,
+          "source_fraction": 1.9595512117520385e-05,
+          "mean_energy_dilution": 0.5662318340120444,
+          "hc_at_reference": 5.315921386043049e-25,
+          "omega_at_reference": 2.4357174114891573e-10,
+          "present_integral_omega_dlnf": 2.7739006911772018e-09
+        },
+        "median": {
+          "rate_gpc3_yr": 30.4,
+          "rho_src_msun_mpc3": 15020.59594621565,
+          "source_fraction": 2.3828142734904787e-05,
+          "mean_energy_dilution": 0.5662318340120442,
+          "hc_at_reference": 5.861993563799711e-25,
+          "omega_at_reference": 2.961832372370812e-10,
+          "present_integral_omega_dlnf": 3.373063240471477e-09
+        },
+        "high": {
+          "rate_gpc3_yr": 36.9,
+          "rho_src_msun_mpc3": 18232.23652682097,
+          "source_fraction": 2.8922975885460087e-05,
+          "mean_energy_dilution": 0.5662318340120444,
+          "hc_at_reference": 6.45835225034239e-25,
+          "omega_at_reference": 3.595118899357996e-10,
+          "present_integral_omega_dlnf": 4.09427742017755e-09
+        }
+      },
+      "kappa_only_at_median_rate": {
+        "low": {
+          "kappa_z": 1.8,
+          "rho_src_msun_mpc3": 11371.834399773266,
+          "source_fraction": 1.803987632752793e-05,
+          "mean_energy_dilution": 0.596924194753535,
+          "hc_at_reference": 5.153204660520935e-25,
+          "omega_at_reference": 2.288888213790136e-10,
+          "present_integral_omega_dlnf": 2.6921096625657425e-09
+        },
+        "median": {
+          "kappa_z": 2.5,
+          "rho_src_msun_mpc3": 15020.59594621565,
+          "source_fraction": 2.3828142734904787e-05,
+          "mean_energy_dilution": 0.5662318340120442,
+          "hc_at_reference": 5.861993563799711e-25,
+          "omega_at_reference": 2.961832372370812e-10,
+          "present_integral_omega_dlnf": 3.373063240471477e-09
+        },
+        "high": {
+          "kappa_z": 3.2,
+          "rho_src_msun_mpc3": 20528.80132674063,
+          "source_fraction": 3.2566165146950795e-05,
+          "mean_energy_dilution": 0.5388354482764213,
+          "hc_at_reference": 6.788209642881048e-25,
+          "omega_at_reference": 3.9717352715987495e-10,
+          "present_integral_omega_dlnf": 4.3869510489003006e-09
+        }
+      },
+      "to_z3": {
+        "rho_src_msun_mpc3": 29353.49709946689,
+        "hc_at_reference": 7.73965938322602e-25
+      },
+      "status": "One-at-a-time sensitivity ranges only; the marginal rate and kappa endpoints are not combined into a credible interval because their joint posterior is not propagated."
+    },
+    "bbh_stochastic_limit_inversion": {
+      "scope": "The full allowed f^(2/3) component is assigned to sBBHs and mapped with the representative binary, fixed spectrum, efficiency, and 10-Gyr constant-rate history.",
+      "statistical_status": "Each row is one prior-specific 95-percent observational upper limit expressed in three equivalent units.",
+      "priors": {
+        "log_uniform_amplitude": {
+          "coverage": "95-percent credible observational upper limit",
+          "omega_25_upper_limit": 2e-09,
+          "scale_relative_to_fixed_history_benchmark": 14.276807462856446,
+          "source_fraction_upper_limit": 0.0001493135988438771,
+          "rho_src_msun_mpc3_upper_limit": 94123.1241755096,
+          "rate_gpc3_yr_upper_limit": 434.01494687083596
+        },
+        "uniform_amplitude": {
+          "coverage": "95-percent credible observational upper limit",
+          "omega_25_upper_limit": 6.3e-09,
+          "scale_relative_to_fixed_history_benchmark": 44.9719435079978,
+          "source_fraction_upper_limit": 0.00047033783635821286,
+          "rho_src_msun_mpc3_upper_limit": 296487.8411528552,
+          "rate_gpc3_yr_upper_limit": 1367.147082643133
+        }
+      }
+    },
+    "popiii_inventory": {
+      "liu_bromm_history": {
+        "rho_iii_msun_mpc3": 73322.11228627597,
+        "rho_src_msun_mpc3": 733.2211228627597,
+        "hc_at_reference": 6.803213932893254e-24
+      },
+      "planck_calibrated_ceiling": {
+        "rho_iii_msun_mpc3": 200000.00000000006,
+        "rho_src_msun_mpc3": 2000.0000000000005,
+        "hc_at_reference": 1.1235997706702658e-23,
+        "present_integral_omega_dlnf": 9.077471454910992e-11
+      },
+      "delta_z10_rho_iii_7e4": {
+        "rho_src_msun_mpc3": 700.0,
+        "hc_at_reference": 6.425362928376938e-24
+      },
+      "delta_z10_rho_iii_1e5": {
+        "rho_src_msun_mpc3": 1000.0,
+        "hc_at_reference": 7.679777597352735e-24
+      }
+    }
+  },
+  "one_pass_audit": {
+    "smbhb_fixed_shape_benchmark_f_merge": 1.0,
+    "emri_nsc_f_merge": 0.0001,
+    "emri_nsc_closed_pool_f_merge": 0.03,
+    "agn_benchmark_kappa_times_fagn": 0.03,
+    "agn_ceiling_kappa_times_fagn": 1.0,
+    "agn_ceiling_rho_over_broad_smbh_guardrail": 0.053516666666666664,
+    "bns_benchmark_rho_over_rho_star": 2.633999898453023e-06,
+    "bns_high_side_rho_over_rho_star": 6.871497205576433e-06,
+    "popiii_f_merge": 0.01,
+    "bbh_benchmark_rho_over_rho_star": 1.045847254243233e-05,
+    "bbh_high_side_rho_over_rho_star": 1.6995017881452537e-05,
+    "all_adopted_input_fractions_at_or_below_one": true,
+    "cnm_central_shape_conditional_f_merge": 0.9925459250909402,
+    "cnm_central_inside_one_pass_family": true,
+    "cnm_central_status": "the central fixed-shape inference is approximately one merger per present-day remnant and lies inside the one-pass family",
+    "cnm_high_shape_conditional_f_merge": 1.6407391822931872,
+    "cnm_high_inside_one_pass_family": false,
+    "cnm_high_status": "the inferred high endpoint requires f_merge>1 and therefore lies outside the fixed-shape one-pass family",
+    "hierarchy_scope": "repeated generations are outside the one-pass construction; the SP24 SMBHB factor remains a separate extension"
+  },
+  "spectral_diagnostics": {
+    "omega_at_0p3_hz_by_channel": {
+      "bns_benchmark": 5.248418872905274e-13,
+      "popiii_benchmark": 1.2996167753808181e-12,
+      "bbh_benchmark": 7.96511703602866e-12
+    },
+    "popiii_peak_frequency_hz": 15.43543424111042,
+    "popiii_peak_omega": 1.649259225884026e-11,
+    "scope": "inclusive total spectra; no post-subtraction residual is inferred"
+  },
+  "detector_context_audit": {
+    "lisa_correct_to_legacy_noise_power_20_mhz": 1.6316294454228477,
+    "lisa_correct_to_legacy_noise_power_40_mhz": 3.4140070115142254,
+    "one_sided_strain_psd_to_omega_prefactor": 1.37908102729749e+36,
+    "muares": {
+      "arm_length_m": 395000000000.0,
+      "position_noise_asd_m_per_sqrt_hz": 5e-11,
+      "acceleration_noise_asd_m_s2_per_sqrt_hz": 1e-15,
+      "duration_yr": 10.0
+    },
+    "lisa_duration_yr": 4.0,
+    "bbo_duration_yr": 5.0,
+    "bbo_log_bin_scaling": "1/sqrt(T*f)",
+    "ce_duration_yr": 1.0,
+    "detector_scope": "illustrative energy-density sensitivity context, not population-ceiling inputs"
+  },
+  "step3b_integrated_energy": {
+    "included_components": [
+      "smbhb_benchmark",
+      "emri_benchmark",
+      "agn_imri_benchmark",
+      "bns_benchmark",
+      "popiii_benchmark",
+      "bbh_benchmark"
+    ],
+    "excluded": {
+      "repeated_merger_pta_strain_extension": "The fixed-frequency repeated-merger factor is not applied to the one-generation integrated ceiling.",
+      "bbh_pointwise_envelope": "The frequencywise spin envelope is not one realizable population and is never integrated.",
+      "galactic_dwd_foreground": "Contextual Galactic foreground outside the cosmological ledger.",
+      "broadband_smbhb_composite_cumulative": "Retired: only the full-census PTA display segment is emitted; the scalar SMBHB energies use analytic mass moments."
+    },
+    "channels": {
+      "smbhb_benchmark": {
+        "label": "SMBHB LM24 one-pass benchmark",
+        "history_scope": "Full analytic LM24 mass moment with the explicit benchmark redshift distribution",
+        "rho_src_msun_mpc3": 1800000.0,
+        "source_frame_efficiency": 0.019874898192180235,
+        "mean_energy_dilution": 0.7102202710147822,
+        "source_frame_energy_over_rho_crit": 2.8375952684877267e-07,
+        "present_integral_omega_dlnf": 2.0153176806156179e-07,
+        "fraction_of_conditional_benchmark_sum": 0.9893296553971986
+      },
+      "emri_benchmark": {
+        "label": "EMRI",
+        "history_scope": "effective-z=0 scalar benchmark; no unique history supplied",
+        "rho_src_msun_mpc3": 63.03720820092557,
+        "source_frame_efficiency": 0.05,
+        "mean_energy_dilution": 1.0,
+        "source_frame_energy_over_rho_crit": 2.5000000000000007e-11,
+        "present_integral_omega_dlnf": 2.5000000000000007e-11,
+        "fraction_of_conditional_benchmark_sum": 0.0001227262660513886
+      },
+      "agn_imri_benchmark": {
+        "label": "AGN--IMRI",
+        "history_scope": "explicit source history with redshift dilution",
+        "rho_src_msun_mpc3": 547.2,
+        "source_frame_efficiency": 0.05,
+        "mean_energy_dilution": 0.6834588528399483,
+        "source_frame_energy_over_rho_crit": 2.17014686887722e-10,
+        "present_integral_omega_dlnf": 1.4832060894970307e-10,
+        "fraction_of_conditional_benchmark_sum": 0.000728113380594609
+      },
+      "bns_benchmark": {
+        "label": "BNS",
+        "history_scope": "explicit source history with redshift dilution",
+        "rho_src_msun_mpc3": 1660.3999999999999,
+        "source_frame_efficiency": 0.02,
+        "mean_energy_dilution": 0.6834588528399481,
+        "source_frame_energy_over_rho_crit": 2.633999898453023e-10,
+        "present_integral_omega_dlnf": 1.800230548977243e-10,
+        "fraction_of_conditional_benchmark_sum": 0.0008837422932304737
+      },
+      "popiii_benchmark": {
+        "label": "Pop III BBH",
+        "history_scope": "explicit source history with redshift dilution",
+        "rho_src_msun_mpc3": 733.2211228627597,
+        "source_frame_efficiency": 0.05,
+        "mean_energy_dilution": 0.11444369160823656,
+        "source_frame_energy_over_rho_crit": 2.9078902119430866e-10,
+        "present_integral_omega_dlnf": 3.327896906462243e-11,
+        "fraction_of_conditional_benchmark_sum": 0.0001633681444536313
+      },
+      "bbh_benchmark": {
+        "label": "sBBH",
+        "history_scope": "explicit source history with redshift dilution",
+        "rho_src_msun_mpc3": 6592.729111209701,
+        "source_frame_efficiency": 0.05,
+        "mean_energy_dilution": 0.6834588528399481,
+        "source_frame_energy_over_rho_crit": 2.6146181356080827e-09,
+        "present_integral_omega_dlnf": 1.786983911577224e-09,
+        "fraction_of_conditional_benchmark_sum": 0.008772394518471097
+      }
+    },
+    "conditional_benchmark_sum_omega_dlnf": 2.0370537460605108e-07,
+    "benchmark_rate_only_sensitivities": {
+      "scope": "Each model-specific marginal 90-percent rate interval is mapped into the benchmark sum with every other input fixed.",
+      "statistical_status": "One-at-a-time propagated marginal ranges, not a joint credible interval for the benchmark sum.",
+      "cases": {
+        "shared_default_bbh_rate": {
+          "varied_channels": [
+            "agn_imri_benchmark",
+            "bbh_benchmark"
+          ],
+          "coverage": "90-percent interval induced by the marginal rate posterior",
+          "central_sum_omega_dlnf": 2.0370537460605108e-07,
+          "plus_omega_dlnf": 4.1379866392845437e-10,
+          "minus_omega_dlnf": 3.4377119772517785e-10,
+          "upper_sum_omega_dlnf": 2.0411917326997954e-07,
+          "lower_sum_omega_dlnf": 2.033616034083259e-07
+        },
+        "bns_fullpop_rate": {
+          "varied_channels": [
+            "bns_benchmark"
+          ],
+          "coverage": "90-percent interval induced by the marginal rate posterior",
+          "central_sum_omega_dlnf": 2.0370537460605108e-07,
+          "plus_omega_dlnf": 2.8961550484389366e-10,
+          "minus_omega_dlnf": 1.3327170505919218e-10,
+          "upper_sum_omega_dlnf": 2.0399499011089497e-07,
+          "lower_sum_omega_dlnf": 2.035721029009919e-07
+        }
+      }
+    },
+    "benchmark_rate_only_envelope": {
+      "scope": "The shared Default-BBH rate used by AGN--IMRI and sBBH and the FullPop BNS rate are evaluated at their model-specific 90-percent endpoints; all other inputs are held fixed.",
+      "statistical_status": "Not a joint credible interval because the BNS and BBH rate summaries do not define a joint posterior.",
+      "plus_omega_dlnf": 7.034141687723481e-10,
+      "minus_omega_dlnf": 4.7704290278437e-10,
+      "upper_sum_omega_dlnf": 2.0440878877482343e-07,
+      "lower_sum_omega_dlnf": 2.0322833170326671e-07
+    },
+    "benchmark_input_envelope": {
+      "scope": "Endpoint envelope obtained by varying the LM24 SMBH-density normalization, the shared Default-BBH rate, and the FullPop BNS rate; all other inputs are held fixed.",
+      "statistical_status": "Not a joint credible interval: the inputs come from separate analyses and no cross-channel covariance is available.",
+      "plus_omega_dlnf": 9.027308886279981e-08,
+      "minus_omega_dlnf": 5.6458089586551536e-08,
+      "upper_sum_omega_dlnf": 2.939784634688509e-07,
+      "lower_sum_omega_dlnf": 1.4724728501949954e-07
+    },
+    "smbhb_support_model": "Full analytic LM24 mass moment; Newtonian circular inspiral to each source-frame Schwarzschild ISCO",
+    "interpretation": "The benchmark and high-side sums add independently calculated scalar channel energies. The SMBHB scalars use full analytic LM24 moments and are not normalized by an emitted broadband spectrum. The high-side cases need not occur together; their sum is not a universal or jointly inferred population bound.",
+    "additivity": "Distinct GW events add in energy. Shared or nested parent stocks are not counted as independent reservoirs.",
+    "smbhb_conditional_reference_spectrum_integral_omega_dlnf": 2.974433756684786e-07,
+    "conditional_ceiling": {
+      "included_components": [
+        "smbhb_conditional_ceiling",
+        "emri_closed_pool_ceiling",
+        "agn_imri_ceiling",
+        "bns_ceiling",
+        "popiii_ceiling",
+        "bbh_ceiling_realizable_chi0p7"
+      ],
+      "channels": {
+        "smbhb_conditional_ceiling": {
+          "label": "SMBHB LM24 one-generation ceiling",
+          "history_scope": "One equal-mass merger per present-day remnant at z=0; the repeated-merger fixed-frequency factor is excluded",
+          "rho_src_msun_mpc3": 1800000.0,
+          "source_frame_efficiency": 0.020833333333333336,
+          "mean_energy_dilution": 1.0,
+          "source_frame_energy_over_rho_crit": 2.974433756684786e-07,
+          "present_integral_omega_dlnf": 2.974433756684786e-07,
+          "mass_ratio": 1.0,
+          "mergers_per_present_day_remnant": 1.0,
+          "repeated_merger_factor_included": false,
+          "fraction_of_conditional_ceiling_sum": 0.8942741923070543
+        },
+        "emri_closed_pool_ceiling": {
+          "label": "EMRI",
+          "history_scope": "Unreplenished NSC with the Babak et al. stellar-BH mass fraction; other benchmark inputs fixed",
+          "rho_src_msun_mpc3": 18911.16246027767,
+          "source_frame_efficiency": 0.05,
+          "mean_energy_dilution": 1.0,
+          "source_frame_energy_over_rho_crit": 7.500000000000001e-09,
+          "present_integral_omega_dlnf": 7.500000000000001e-09,
+          "fraction_of_conditional_ceiling_sum": 0.02254901937966973
+        },
+        "agn_imri_ceiling": {
+          "label": "AGN--IMRI",
+          "history_scope": "AGN pipeline with constant source-frame rate over T_eff interpreted as a lookback interval",
+          "rho_src_msun_mpc3": 96329.99999999999,
+          "source_frame_efficiency": 0.05,
+          "mean_energy_dilution": 0.5877176035364331,
+          "source_frame_energy_over_rho_crit": 3.820362717085938e-08,
+          "present_integral_omega_dlnf": 2.2452944207256837e-08,
+          "fraction_of_conditional_ceiling_sum": 0.06750558320801034
+        },
+        "bns_ceiling": {
+          "label": "BNS",
+          "history_scope": "GWTC-5 union-of-model 90-percent endpoint; constant rate over 10 Gyr",
+          "rho_src_msun_mpc3": 4331.5999999999985,
+          "source_frame_efficiency": 0.02,
+          "mean_energy_dilution": 0.6834588528399482,
+          "source_frame_energy_over_rho_crit": 6.871497205576434e-10,
+          "present_integral_omega_dlnf": 4.69638559741618e-10,
+          "fraction_of_conditional_ceiling_sum": 0.0014119851980071898
+        },
+        "popiii_ceiling": {
+          "label": "Pop III BBH",
+          "history_scope": "Liu--Bromm redshift shape normalized to the Planck-calibrated Pop-III mass endpoint; one-percent prompt-merger mapping",
+          "rho_src_msun_mpc3": 2000.0000000000005,
+          "source_frame_efficiency": 0.05,
+          "mean_energy_dilution": 0.11444369160823654,
+          "source_frame_energy_over_rho_crit": 7.931823351159431e-10,
+          "present_integral_omega_dlnf": 9.077471454910992e-11,
+          "fraction_of_conditional_ceiling_sum": 0.0002729174396735823
+        },
+        "bbh_ceiling_realizable_chi0p7": {
+          "label": "sBBH",
+          "history_scope": "GWTC-5 union-of-model 90-percent endpoint; constant rate over 10 Gyr",
+          "rho_src_msun_mpc3": 10713.184805715764,
+          "source_frame_efficiency": 0.0801,
+          "mean_energy_dilution": 0.6834588528399482,
+          "source_frame_energy_over_rho_crit": 6.806504661521742e-09,
+          "present_integral_omega_dlnf": 4.65196586781341e-09,
+          "aligned_component_spin": 0.7,
+          "spectrum_scope": "Single realizable q=1, chi1=chi2=+0.7 spectrum; not the pointwise spin envelope",
+          "fraction_of_conditional_ceiling_sum": 0.01398630246758489
+        }
+      },
+      "sum_omega_dlnf": 3.326086990178396e-07,
+      "uncertainty_lm24_only": {
+        "source": "LM24 SMBH mass-density normalization only; all other ceiling inputs are held fixed",
+        "plus_omega_dlnf": 1.3219705585265718e-07,
+        "minus_omega_dlnf": 8.262315990791073e-08,
+        "upper_sum_omega_dlnf": 4.6480575487049676e-07,
+        "lower_sum_omega_dlnf": 2.4998553910992883e-07,
+        "reported_in_units_of_1e_minus_7": {
+          "central": 3.33,
+          "plus": 1.32,
+          "minus": 0.83
+        }
+      },
+      "scope": "Six conditional channel ceilings. The SMBHB term is one equal-mass merger per present-day remnant; its repeated-merger fixed-frequency factor is excluded. The sBBH term uses the realizable chi1=chi2=+0.7 spectrum."
+    },
+    "smbhb_support_sensitivities": {
+      "primary_schwarzschild_inspiral": {
+        "source_frame_efficiency": 0.019874898192180235,
+        "present_integral_omega_dlnf": 2.0153176806156179e-07,
+        "scope": "Full analytic LM24 mass moment; Newtonian circular inspiral through each binary's source-frame Schwarzschild ISCO."
+      },
+      "kerr_chi0p7_inspiral": {
+        "source_frame_efficiency": 0.03274316882525196,
+        "present_integral_omega_dlnf": 3.3201622677431003e-07,
+        "ratio_to_primary": 1.6474634742096308,
+        "scope": "Sensitivity only; adopting it as primary would require a declared SMBHB spin domain."
+      },
+      "full_imr_nonspinning": {
+        "source_frame_efficiency": 0.0445802326277797,
+        "present_integral_omega_dlnf": 4.5204423263949327e-07,
+        "scope": "Integrated Husa radiated-fraction sensitivity only; no SMBHB full-IMR population spectrum is adopted."
+      },
+      "full_imr_chi0p7": {
+        "source_frame_efficiency": 0.07497953356529392,
+        "present_integral_omega_dlnf": 7.602936036064937e-07,
+        "scope": "Integrated Husa radiated-fraction sensitivity only; no SMBHB full-IMR population spectrum is adopted."
+      }
+    },
+    "smbhb_emitted_spectrum": {
+      "frequency_min_hz": 1e-09,
+      "frequency_max_hz": 1e-07,
+      "scope": "Display-only full-census PTA segment. It is not integrated to obtain either scalar SMBHB energy or a composite sum.",
+      "broadband_composite_cumulative_status": "retired"
+    },
+    "cosmological_context": {
+      "wright_giblin_hazboun": {
+        "delta_neff_95": 0.284,
+        "h": 0.674,
+        "h2_integral_limit": 1.5903999999999998e-06,
+        "omega_integral_limit": 3.5009553663411663e-06,
+        "omega_limit_over_conditional_benchmark_sum": 17.186367188944903,
+        "scope": "Pre-recombination backgrounds only; this is not a bound on the late-time astrophysical composite.",
+        "provenance": "Equation and inputs verified against arXiv:2409.15572v1; 2026 PRL metadata verified at doi:10.1103/clwq-n2vp."
+      },
+      "giblin_thrane": {
+        "peak_omega_levels": {
+          "pessimistic": 9.93e-15,
+          "realistic": 1.49e-12,
+          "optimistic": 4.97e-10
+        },
+        "scope": "Pointwise rule-of-thumb levels for radiation-era cosmological sources; explicitly not an astrophysical bound and not an integrated-energy limit. No ratio to a retired broadband composite is emitted."
+      }
+    }
+  },
+  "interpretation": {
+    "aggregation": "Step 3B emits both the declared benchmark sum and a sum formed from the five theoretical-upper-limit cases plus one equal-mass SMBHB merger per present-day remnant. The sum excludes the repeated-merger fixed-frequency factor. The cases were calculated separately and need not occur together, so the sum is not a physical ceiling.",
+    "smbhb_interval": "CNM-to-fmerge mapping is conditional on the central LM24 full-census shape, mass-ratio distribution, and redshift kernel; no additional primary-mass selection is imposed",
+    "smbhb_provenance": "2.11e-15 is derived from the full convergent moment of the erratum-corrected analytic LM24 fit normalized to the 1.8e6 Msun/Mpc^3 census, with no additional primary-mass cut; it is consistent with LM24's published 2.0e-15 forward result",
+    "lvk_history": "constant comoving source-frame rate over a 10-Gyr lookback interval, with redshift dilution and shifted support explicit",
+    "popiii": "Liu--Bromm SFRD plus a declared prompt one-percent merger mapping; the ceiling uses the Planck-calibrated mass endpoint with other benchmark inputs fixed",
+    "population_scope": "inclusive total populations; no unresolved/subtraction forecast is computed without a selection model",
+    "bbh_population_proxy": "21.687 Msun and 0.04708 come from a deterministic GWTC-5-inspired approximation, not posterior propagation"
+  },
+  "normalization_residuals": {
+    "emri_benchmark_omega_over_B_minus_1": 0.00010743771398624702,
+    "emri_closed_pool_ceiling_omega_over_B_minus_1": 0.00010743771398624702,
+    "agn_imri_benchmark_omega_over_B_minus_1": -2.0955909395548034e-06,
+    "agn_imri_ceiling_omega_over_B_minus_1": 7.561941242295589e-06,
+    "bns_benchmark_omega_over_B_minus_1": -1.0115908209429314e-05,
+    "bns_ceiling_omega_over_B_minus_1": -1.0115908209540336e-05,
+    "popiii_benchmark_omega_over_B_minus_1": 3.306607130326711e-06,
+    "popiii_ceiling_omega_over_B_minus_1": 3.3066071301046662e-06,
+    "bbh_benchmark_omega_over_B_minus_1": 4.175610768486493e-06,
+    "bbh_ceiling_omega_over_B_minus_1": 6.916137806012301e-06
+  }
+}

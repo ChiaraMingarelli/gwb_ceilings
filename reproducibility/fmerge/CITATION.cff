@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this calculation, please cite the associated paper and this software."
+title: "LM24-CNM merger-factor propagation"
+type: software
+authors:
+  - family-names: Mingarelli
+    given-names: "Chiara M. F."
+version: 0.4.0

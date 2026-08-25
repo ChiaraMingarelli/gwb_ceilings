@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lm24-cnm-posterior"
+version = "0.4.0"
+description = "Reproducible LM24 population and NG15 CNM f_merge propagation"
+readme = "README.md"
+authors = [{name = "Chiara M. F. Mingarelli"}]
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24,<3"]
+
+[project.optional-dependencies]
+plot = ["matplotlib>=3.7,<4", "scipy>=1.10,<2"]
+
+[project.scripts]
+lm24-cnm-posterior = "lm24_cnm_posterior:main"
+
+[tool.setuptools]
+py-modules = ["lm24_cnm_posterior"]

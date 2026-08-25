@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gwb-ceilings-reproducibility"
+version = "1.0.0"
+description = "Calculations and figures for astrophysical GWB ceilings and benchmarks"
+readme = "README.md"
+authors = [{name = "Chiara M. F. Mingarelli"}]
+license = {text = "MIT"}
+
+[project.urls]
+Repository = "https://github.com/ChiaraMingarelli/gwb_ceilings"
+requires-python = ">=3.10,<3.14"
+dependencies = ["numpy>=1.24,<3"]
+
+[project.optional-dependencies]
+figures = ["matplotlib>=3.7,<4", "scipy>=1.10,<2"]
+legacy-pdf = ["pypdf>=6,<7"]
+dev = [
+  "matplotlib>=3.7,<4",
+  "scipy>=1.10,<2",
+  "pypdf>=6,<7",
+]
+
+[project.scripts]
+gwb-ceilings-ledger = "verify_ceilings:main"
+gwb-ceilings-figure-pta = "make_figure1_plane_forest:main"
+gwb-ceilings-figure-multiband = "make_fig2_corrected:main"
+gwb-ceilings-fmerge = "fmerge.lm24_cnm_posterior:main"
+gwb-ceilings-fmerge-plot = "fmerge.plot_fmerge_posterior:main"
+gwb-ceilings-patch-author-figure = "tools.patch_author_figure3:main"
+
+[tool.setuptools]
+py-modules = [
+  "verify_ceilings",
+  "make_figure1_plane_forest",
+  "make_fig2_corrected",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["fmerge*", "tools*"]

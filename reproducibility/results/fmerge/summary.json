@@ -1,0 +1,139 @@
+{
+  "status": "quantile-based reconstruction from the published LM24 Appendix-B approximation and CNM amplitude summary",
+  "method": {
+    "lm24": "LM24 Appendix-B approximate GSMF reconstruction with independent McConnell-Ma scaling draws over the full census",
+    "cnm": "split-lognormal surrogate of reported CNM 5/50/95% quantiles",
+    "mapping": "f_merge = (A_CNM / A_model[f_merge=1])^2",
+    "random_generator": "NumPy PCG64 with independent spawned streams; this deliberately avoids the same-seed coupling in the public helper example",
+    "prior_interpretation": "The transformed samples correspond to a log-uniform f_merge prior because the fixed-gamma CNM analysis used a log-uniform amplitude prior. A flat-f sensitivity is importance weighted."
+  },
+  "implementation": {
+    "version": "0.4.0",
+    "file": "lm24_cnm_posterior.py",
+    "sha256": "9b8e394db297618313abd4056b045a3c121bc7ed424fa4bd2489fdbb5ef870bb",
+    "numpy_version": "1.26.4",
+    "python_version": "3.10.12"
+  },
+  "external_inputs": {},
+  "configuration": {
+    "sample_count": 262144,
+    "seed": 20240724,
+    "batch_size": 512,
+    "stellar_quadrature_nodes": 96,
+    "mass_ratio_quadrature_nodes": 40,
+    "redshift_quadrature_nodes": 96,
+    "log10_stellar_mass_min": 8.5,
+    "log10_stellar_mass_max": 12.0,
+    "mass_ratio_min": 0.1,
+    "mass_ratio_max": 1.0,
+    "scaling_intercept_mean": 8.46,
+    "scaling_intercept_sigma": 0.08,
+    "scaling_slope_mean": 1.05,
+    "scaling_slope_sigma": 0.11,
+    "scaling_intrinsic_scatter_dex": 0.34,
+    "cnm_amplitude_median": 2.1e-15,
+    "cnm_amplitude_lower_90": 1.6e-15,
+    "cnm_amplitude_upper_90": 2.7e-15,
+    "cnm_log10_amplitude_prior_min": -18.0,
+    "cnm_log10_amplitude_prior_max": -14.0,
+    "log10_f_prior_min": -3.0,
+    "log10_f_prior_max": 1.0
+  },
+  "references": {
+    "lm24": "doi:10.3847/2041-8213/ad66b8",
+    "lm24_erratum": "doi:10.3847/2041-8213/ae5f96",
+    "lm24_helper_commit": "https://github.com/EmilyLiepold/LM24_helpers/commit/2092837e91197df16d5231d5845628638afd62ea",
+    "mcconnell_ma_2013": "doi:10.1088/0004-637X/764/2/184",
+    "massive_survey": "doi:10.1088/0004-637X/795/2/158",
+    "cnm_fixed_gamma": "arXiv:2606.28554"
+  },
+  "diagnostics": {
+    "dynamical_draw_count": 131072,
+    "sps_draw_count": 131072,
+    "phi1_floor_fraction": 0.17706298828125,
+    "phi2_floor_fraction": 0.00383758544921875,
+    "redshift_moment": 0.8898086213137448,
+    "eta_moment": 0.23849877830616278,
+    "corr_log_rho_total_log_A_uncut": 0.853432255209123,
+    "f_samples_outside_prior_fraction": 1.9073486328125e-05,
+    "flat_f_effective_sample_size": 206240.08256815345
+  },
+  "results": {
+    "lm24_reconstructed_rho_total_msun_mpc3": {
+      "lower_90": 1196183.6360047185,
+      "median": 1726456.7524750147,
+      "upper_90": 2549782.594485656,
+      "minus": 530273.1164702962,
+      "plus": 823325.8420106412
+    },
+    "A_lm24_reconstructed_uncut": {
+      "lower_90": 1.4653912921735085e-15,
+      "median": 1.983183573750506e-15,
+      "upper_90": 2.7439741593731328e-15,
+      "minus": 5.177922815769975e-16,
+      "plus": 7.607905856226268e-16
+    },
+    "A_lm24_used_for_f_merge": {
+      "lower_90": 1.4653912921735085e-15,
+      "median": 1.983183573750506e-15,
+      "upper_90": 2.7439741593731328e-15,
+      "minus": 5.177922815769975e-16,
+      "plus": 7.607905856226268e-16
+    },
+    "A_cnm": {
+      "lower_90": 1.6000044026168656e-15,
+      "median": 2.0999999370709045e-15,
+      "upper_90": 2.6999931339467663e-15,
+      "minus": 4.999955344540389e-16,
+      "plus": 5.999931968758619e-16
+    },
+    "f_merge_log_uniform_prior": {
+      "lower_90": 0.47824857735327714,
+      "median": 1.1096305364764176,
+      "upper_90": 2.463201878515505,
+      "minus": 0.6313819591231404,
+      "plus": 1.3535713420390874
+    },
+    "probability_f_merge_le_1_log_uniform_prior": 0.4175494680303198,
+    "probability_f_merge_gt_1_log_uniform_prior": 0.5824505319696802,
+    "f_merge_flat_prior_sensitivity": {
+      "lower_90": 0.624661835934538,
+      "median": 1.4128641786627116,
+      "upper_90": 3.0994514077599713,
+      "minus": 0.7882023427281737,
+      "plus": 1.6865872290972597
+    },
+    "probability_f_merge_le_1_flat_prior": 0.2403737442105696,
+    "probability_f_merge_gt_1_flat_prior": 0.7596262557894302
+  },
+  "published_cross_checks": {
+    "lm24_A_uncut_90": {
+      "lower": 1.5e-15,
+      "central": 2e-15,
+      "upper": 2.7e-15
+    },
+    "lm24_rho_total_90_msun_mpc3": {
+      "lower": 1300000.0,
+      "central": 1800000.0,
+      "upper": 2600000.0
+    },
+    "cnm_A_90": {
+      "lower": 1.6e-15,
+      "central": 2.1e-15,
+      "upper": 2.7e-15
+    }
+  },
+  "limitations": [
+    "Mass-ratio and redshift distributions are held fixed; their population-model uncertainty is not included.",
+    "The posterior interpretation assumes the fixed-gamma CNM log-uniform amplitude prior and the declared log-uniform f_merge prior bounds.",
+    "The LM24 mass-ratio and redshift kernels were chosen using an earlier PTA population analysis, so this is not a fully independent joint population inference.",
+    "The host-mass integral follows the LM24 helper's declared 8.5--12.0 log10(Mstar/Msun) bounds; extrapolation beyond that domain is excluded.",
+    "The public LM24 generator approximates the full correlated GSMF distribution.",
+    "The default CNM distribution is a piecewise-lognormal surrogate fixed only by three reported amplitude quantiles; its tail shape is not determined by those quantiles."
+  ],
+  "sample_archive": {
+    "path_relative_to_summary": "posterior_draws.npz",
+    "sha256": "d58dab79fd0d0002013dfa5a2f8db6954578cec13b45710343bf7f84f8417683",
+    "sample_count": 262144
+  }
+}

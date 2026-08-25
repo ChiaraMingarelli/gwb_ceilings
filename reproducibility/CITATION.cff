@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated paper and the archived software release."
+title: "Reproducibility package for Energetic Ceilings and Benchmarks of Astrophysical Gravitational-Wave Backgrounds"
+type: software
+authors:
+  - family-names: Mingarelli
+    given-names: "Chiara M. F."
+license: MIT
+repository-code: "https://github.com/ChiaraMingarelli/gwb_ceilings"
+version: 1.0.0
+
