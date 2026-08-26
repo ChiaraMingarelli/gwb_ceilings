@@ -27,7 +27,7 @@ dev = [
 [project.scripts]
 gwb-ceilings-ledger = "verify_ceilings:main"
 gwb-ceilings-figure-pta = "make_figure1_plane_forest:main"
-gwb-ceilings-figure-multiband = "make_fig2_corrected:main"
+gwb-ceilings-figure-multiband = "make_figure3_multiband:main"
 gwb-ceilings-fmerge = "fmerge.lm24_cnm_posterior:main"
 gwb-ceilings-fmerge-plot = "fmerge.plot_fmerge_posterior:main"
 gwb-ceilings-patch-author-figure = "tools.patch_author_figure3:main"
@@ -36,7 +36,7 @@ gwb-ceilings-patch-author-figure = "tools.patch_author_figure3:main"
 py-modules = [
   "verify_ceilings",
   "make_figure1_plane_forest",
-  "make_fig2_corrected",
+  "make_figure3_multiband",
 ]
 
 [tool.setuptools.packages.find]

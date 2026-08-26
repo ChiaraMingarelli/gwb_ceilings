@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 """Propagate LM24 population uncertainty and the NG15 CNM amplitude to f_merge.
 
-This script is a reproducible companion to the SMBHB calculation in
-``Energetic Ceilings of Astrophysical Gravitational-Wave Backgrounds``.
+This script is the reproducible SMBHB merger-factor calculation of
+Mingarelli (2026), "Energetic Ceilings and Benchmarks of Astrophysical
+Gravitational-Wave Backgrounds" (arXiv:2601.18859).  Its output underlies
+Eq. (14) of the paper, f_merge = 1.11 (+1.35, -0.63) at 90% credibility,
+and the distribution shown in Figure 2 (fmerge-posterior.pdf).
 
 It reconstructs the *approximate* Liepold & Ma (2024; LM24) galaxy stellar
 mass-function posterior described in their Appendix B, propagates every draw
 through the McConnell & Ma (2013) black-hole--bulge relation, and evaluates
 the full-census Phinney population moment at f = 1/yr.  It then maps
 independent draws of the NANOGrav 15-year customized-noise-model (CNM)
-amplitude to
+amplitude through Eq. (13) of the paper,
 
     f_merge = (A_CNM / A_model[f_merge=1])**2.
+
+Here f_merge (dimensionless) rescales the processed SMBHB mass density
+while the population shape is held fixed; the amplitudes A are
+characteristic-strain amplitudes at f = 1/yr, and mass densities are in
+Msun Mpc^-3.
 
 The manuscript calculation uses only published summary information.  The
 LM24 input is its Appendix-B approximation, and the CNM input is its published
@@ -588,7 +596,8 @@ def load_weighted_amplitude_samples(
     NPZ archives may contain ``preferred_key`` (or ``amplitude``) and an
     optional ``weight``/``weights`` array.  Other formats are interpreted as
     unweighted amplitudes.  Invalid entries are rejected rather than silently
-    removed so that source-chain problems remain auditable.
+    removed, so problems in a source chain surface immediately and can be
+    traced back to the input file.
     """
 
     path = Path(path)

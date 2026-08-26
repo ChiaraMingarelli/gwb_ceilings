@@ -25,13 +25,13 @@ fmerge:
 test:
 	$(PYTHON) -m unittest -v \
 		tests/test_verify_ceilings.py \
-		tests/test_phasev_figure_context.py
+		tests/test_figure_context.py
 	$(PYTHON) -m unittest -v fmerge/test_lm24_cnm_posterior.py
 
 figures:
 	$(PYTHON) make_figure1_plane_forest.py
 	$(PYTHON) fmerge/plot_fmerge_posterior.py
-	$(PYTHON) make_fig2_corrected.py
+	$(PYTHON) make_figure3_multiband.py
 
 check-generated:
 	$(PYTHON) tools/check_generated.py

@@ -1,13 +1,28 @@
-"""Render the manuscript's multiband benchmark map.
+"""Build the paper's Figure 3, the multiband Omega_gw(f) benchmark map.
 
-The figure locates the six benchmark spectra across frequency.  The
-full-census SMBHB curve is solid through 1e-6 Hz, with short dashed guide
-extensions on both sides; its frequency-integrated energy is calculated
-separately from the global mass budget.  Conditional maxima, integrated sums,
-and cumulative diagnostics are excluded.  Five quiet detector curves and one
-Galactic-DWD curve provide orientation.  A validated local PTA context
-archive adds free-spectrum marginal curves when it is available locally; it is
-not required by the public build.
+Figure 3 of Mingarelli (2026), "Energetic Ceilings and Benchmarks of
+Astrophysical Gravitational-Wave Backgrounds" (arXiv:2601.18859), places the
+six benchmark gravitational-wave-background spectra of Table 2 across the
+nanohertz-to-kilohertz band (Sec. IV of the paper).  Omega_gw(f) is the
+dimensionless energy-density spectrum obtained from the characteristic
+strain h_c(f) through Eq. (1) of the paper; all frequencies are in Hz.
+
+The full-census SMBHB curve (Sec. III A 1) is solid from 1e-9 to 1e-6 Hz,
+with short dashed guide extensions on both sides; its frequency-integrated
+energy is calculated separately from the global mass budget.  Only the six
+benchmark spectra are drawn; the theoretical upper limits and integrated
+energies appear in the paper's tables, not in this figure.  Five detector
+sensitivity curves (muAres, LISA, BBO, aLIGO design, and Cosmic Explorer)
+and the Galactic double-white-dwarf confusion foreground (Sec. III C)
+provide orientation.  Unless a published power-law-integrated curve is used
+directly, the detector curves are single-natural-log-bin SNR-one
+orientation curves, Omega_n(f)/sqrt(T f); see the individual function
+docstrings.  An optional local archive of NANOGrav free-spectrum marginals
+adds light-gray context violins when it is present; the public build does
+not require it.
+
+The manuscript asset for Figure 3 is figure3-final.pdf; this script writes
+the fully code-generated equivalent, figures/gwb-ceilings-reproducible.pdf.
 """
 
 from __future__ import annotations
@@ -61,8 +76,9 @@ CE_40KM_STRAIN_SHA256 = (
 )
 OUTPUT = FIGURES / "gwb-ceilings-reproducible.pdf"
 PNG_OUTPUT = FIGURES / "gwb-ceilings-reproducible.png"
-# The manuscript currently uses an author-finished layout asset.  This
-# code-generated version is the public, fully reproducible scientific plot.
+# The published manuscript uses an author-finished layout asset
+# (figure3-final.pdf).  This code-generated version is the public, fully
+# reproducible scientific plot with identical numerical content.
 SPECTRA_ONLY_OUTPUT = FIGURES / "figure2-spectra-only.pdf"
 SPECTRA_ONLY_PNG_OUTPUT = (
     FIGURES / "figure2-spectra-only.png"
@@ -122,7 +138,12 @@ SMBHB_DISPLAY_MAXIMUM_HZ = 1.0e-6
 
 
 def display_curve(values: np.ndarray) -> np.ndarray:
-    """Return a plotting copy that ends cleanly at physical support."""
+    """Return a plotting copy that ends cleanly at physical support.
+
+    Non-positive values become NaN, and any abrupt drop steeper than
+    0.05 dex per grid step truncates the curve so that a spectrum's
+    physical cutoff is not rendered as a vertical cliff.
+    """
 
     curve = np.where(values > 0.0, values, np.nan).astype(float, copy=True)
     valid = np.isfinite(curve[:-1]) & np.isfinite(curve[1:])
@@ -139,7 +160,12 @@ def benchmark_display_curve(
     values: np.ndarray,
     spectrum_key: str,
 ) -> np.ndarray:
-    """Apply the declared plot-only interpretation boundaries."""
+    """Apply the plot-only frequency boundaries to one benchmark spectrum.
+
+    The boundaries in BENCHMARK_DISPLAY_MINIMUM_HZ (and, for the SMBHB
+    curve, SMBHB_DISPLAY_MAXIMUM_HZ) mark where each idealized spectrum is
+    drawn solid; they do not alter the underlying energetics.
+    """
 
     curve = display_curve(values)
     curve[frequency < BENCHMARK_DISPLAY_MINIMUM_HZ[spectrum_key]] = np.nan
@@ -153,7 +179,7 @@ def benchmark_continuation_curve(
     values: np.ndarray,
     spectrum_key: str,
 ) -> np.ndarray:
-    """Show half-decade guide continuations outside solid boundaries."""
+    """Return the dashed half-decade guide segments outside the solid range."""
 
     curve = display_curve(values)
     solid_minimum = BENCHMARK_DISPLAY_MINIMUM_HZ[spectrum_key]
@@ -179,7 +205,13 @@ def emri_high_frequency_continuation(
     frequency: np.ndarray,
     values: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Continue the EMRI inspiral power law above its declared model cutoff."""
+    """Continue the EMRI inspiral power law above its declared model cutoff.
+
+    The EMRI benchmark spectrum (Sec. III B 1 of the paper) is evaluated up
+    to 1e-2 Hz; this dashed guide extends the circular-inspiral
+    Omega_gw proportional to f^(2/3) slope half a decade beyond that
+    cutoff for display only.
+    """
 
     f = np.asarray(frequency, dtype=float)
     omega = np.asarray(values, dtype=float)
@@ -211,7 +243,13 @@ def emri_high_frequency_continuation(
 
 
 def lisa_sensitivity(frequency: np.ndarray, years: float = 4.0) -> np.ndarray:
-    """Illustrative single-log-bin LISA stochastic sensitivity."""
+    """Illustrative single-log-bin LISA stochastic sensitivity.
+
+    Analytic LISA instrument noise (2.5 Gm arms, standard optical-metrology
+    and acceleration noise terms) converted to a dimensionless Omega_gw
+    noise level and divided by sqrt(T f), giving the SNR-one orientation
+    curve for one natural-log frequency bin over a `years`-long observation.
+    """
 
     length = 2.5e9
     f_star = 19.09e-3
@@ -233,7 +271,12 @@ def muares_sensitivity(
     frequency: np.ndarray,
     years: float = 10.0,
 ) -> np.ndarray:
-    """Proposal-based muAres single-log-bin orientation sensitivity."""
+    """Proposal-based muAres single-log-bin SNR-one orientation sensitivity.
+
+    Uses the muAres proposal noise parameters (3.95e11-m arms) between
+    1e-7 and 1 Hz, converted to Omega_gw and divided by sqrt(T f) as for
+    the LISA curve above.
+    """
 
     omega = np.full_like(frequency, np.nan, dtype=float)
     mask = (frequency >= 1.0e-7) & (frequency <= 1.0)
@@ -260,7 +303,13 @@ def muares_sensitivity(
 
 
 def bbo_sensitivity(frequency: np.ndarray, years: float = 5.0) -> np.ndarray:
-    """Published BBO SNR-one power-law-integrated orientation curve."""
+    """Published BBO SNR-one power-law-integrated orientation curve.
+
+    Interpolates the tabulated Schmitz (2021) BBO power-law-integrated
+    sensitivity, log10(h^2 Omega_gw) versus log10(f/Hz), removes the
+    reduced-Hubble factor h^2, and rescales by 1/sqrt(years).  The input
+    file is verified against its pinned SHA-256 hash before use.
+    """
 
     if years <= 0.0:
         raise ValueError("BBO observation time must be positive.")
@@ -305,7 +354,14 @@ def cosmic_explorer_sensitivity(
     frequency: np.ndarray,
     years: float = 1.0,
 ) -> np.ndarray:
-    """Official CE 40-km strain ASD in a single-log-bin orientation curve."""
+    """Official CE 40-km strain ASD as a single-log-bin orientation curve.
+
+    Interpolates the Cosmic Explorer 40-km amplitude spectral density
+    (units Hz^-1/2, 5-5000 Hz), squares it to a one-sided strain noise
+    power spectral density, converts to Omega_gw, and divides by
+    sqrt(T f) for the SNR-one single-natural-log-bin orientation.  The
+    input file is verified against its pinned SHA-256 hash before use.
+    """
 
     if years <= 0.0:
         raise ValueError("Cosmic Explorer observation time must be positive.")
@@ -352,7 +408,13 @@ def cosmic_explorer_sensitivity(
 
 
 def aligo_design_pi_sensitivity(frequency: np.ndarray) -> np.ndarray:
-    """Published two-sigma Advanced-LIGO/Virgo design PI sensitivity."""
+    """Published Advanced-LIGO/Virgo design power-law-integrated sensitivity.
+
+    Interpolates the published one-sigma design PI curve (Omega_gw versus
+    frequency, 10-2000 Hz) and doubles it to the two-sigma level shown in
+    the figure.  The input file is verified against its pinned SHA-256
+    hash before use.
+    """
 
     digest = hashlib.sha256(ALIGO_DESIGN_PI.read_bytes()).hexdigest()
     if digest != ALIGO_DESIGN_PI_SHA256:
@@ -386,7 +448,13 @@ def aligo_design_pi_sensitivity(frequency: np.ndarray) -> np.ndarray:
 
 
 def dwd_confusion_omega(frequency: np.ndarray) -> np.ndarray:
-    """Robson et al. four-year Galactic-DWD confusion fit."""
+    """Robson et al. (2019) four-year Galactic-DWD confusion fit.
+
+    Evaluates the analytic fit to the unresolved Galactic double-white-dwarf
+    confusion strain noise S_h(f) after four years of LISA observation and
+    converts it to the dimensionless Omega_gw(f) foreground discussed in
+    Sec. III C of the paper.
+    """
 
     amplitude = 9.0e-45
     alpha = 0.138
@@ -407,7 +475,15 @@ def dwd_confusion_omega(frequency: np.ndarray) -> np.ndarray:
 
 
 def load_authoritative_inputs() -> tuple[np.ndarray, dict[str, np.ndarray]]:
-    """Load and validate the Step-3 scalars and spectra used by the figure."""
+    """Load and validate the frozen benchmark scalars and spectra.
+
+    The frozen results archive keeps its historical file names
+    (results/step3-numbers.json and results/step3-spectra.npz) so that
+    pinned hashes remain valid.  The archive holds the shared frequency
+    grid (Hz) and the six dimensionless benchmark Omega_gw(f) spectra of
+    Table 2 of the paper; the SMBHB benchmark strain amplitude at
+    f = 1/yr is checked against its published value before plotting.
+    """
 
     results = json.loads(NUMBERS.read_text(encoding="utf-8"))
     smbhb = results["smbhb"]
@@ -416,7 +492,7 @@ def load_authoritative_inputs() -> tuple[np.ndarray, dict[str, np.ndarray]]:
         if not np.isclose(float(smbhb[key]), expected, rtol=5.0e-12):
             raise RuntimeError(
                 f"authoritative SMBHB {key} changed to {smbhb[key]!r}; "
-                "re-audit the multiband figure"
+                "re-verify the multiband figure against the paper"
             )
 
     with np.load(SPECTRA) as archive:
@@ -436,16 +512,16 @@ def load_authoritative_inputs() -> tuple[np.ndarray, dict[str, np.ndarray]]:
     }
     missing = required.difference(spectra)
     if missing:
-        raise RuntimeError(f"Step-3 spectrum archive is missing {sorted(missing)}")
+        raise RuntimeError(f"frozen spectrum archive is missing {sorted(missing)}")
     if np.any(frequency <= 0.0) or np.any(np.diff(frequency) <= 0.0):
-        raise RuntimeError("Step-3 frequency grid is not positive and increasing.")
+        raise RuntimeError("frozen-archive frequency grid is not positive and increasing.")
     if any(spectra[key].shape != frequency.shape for key in required):
-        raise RuntimeError("Step-3 benchmark spectra do not share one grid.")
+        raise RuntimeError("frozen benchmark spectra do not share one frequency grid.")
     return frequency, spectra
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse optional review-output controls."""
+    """Parse the optional output-path and labeling controls."""
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -485,7 +561,14 @@ def parse_args() -> argparse.Namespace:
 def load_pta_context(
     context_path: Path,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Load an explicitly supplied PTA free-spectrum plotting archive."""
+    """Load and validate an NPZ archive of NANOGrav free-spectrum marginals.
+
+    The archive supplies, for each of five frequency bins, the bin-center
+    frequency (Hz), a grid of log10 Omega_gw values, and the corresponding
+    violin half-widths (Hz).  The embedded provenance hashes must match the
+    source table from which the archive was derived.  These marginals are
+    display context only; see data/pta/README.md.
+    """
 
     expected_hashes = {
         "source_log10_frequency_sha256": (

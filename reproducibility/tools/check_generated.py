@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Regenerate frozen numerical products and compare their scientific content."""
+"""Regenerate the frozen numerical results and compare scientific content.
+
+Reruns ``verify_ceilings.py`` and the f_merge propagation in a temporary
+directory, then compares the regenerated JSON/NPZ products with the frozen
+copies under ``results/`` at strict floating-point tolerances, ignoring
+only environment metadata (Python and NumPy versions).  The frozen files
+keep their historical names (``step3-numbers.json``, ``step3-spectra.npz``)
+so that pinned hashes remain valid.
+"""
 
 from __future__ import annotations
 

@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Fail closed on common mistakes before exporting the public repository."""
+"""Fail-closed scan that the public package contains no private material.
+
+Verifies that the required package files are present and that nothing
+private has leaked into the export: no referee or review filenames, no
+absolute local or private-repository paths in text files or NPZ string
+arrays, no private working directories, and no data archive whose public
+provenance has not been cleared.  With ``--require-license`` it also
+enforces the software license and the third-party detector-data
+redistribution clearance.  Any failure raises an error rather than
+printing a warning, so an incomplete export cannot pass silently.
+"""
 
 from __future__ import annotations
 

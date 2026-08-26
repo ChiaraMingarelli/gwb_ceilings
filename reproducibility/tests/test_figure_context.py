@@ -20,7 +20,7 @@ import make_figure1_plane_forest as fig1  # noqa: E402
 import verify_ceilings as vc  # noqa: E402
 
 
-FIGURE_SOURCE = ROOT / "make_fig2_corrected.py"
+FIGURE_SOURCE = ROOT / "make_figure3_multiband.py"
 PLANE_SOURCE = ROOT / "make_figure1_plane_forest.py"
 MANUSCRIPT = Path(
     os.environ.get(
@@ -131,7 +131,7 @@ def manuscript_text(test_case: unittest.TestCase) -> str:
     return MANUSCRIPT.read_text(encoding="utf-8")
 
 
-class PhaseVFigureContextTests(unittest.TestCase):
+class FigureContextTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.functions = load_detector_functions()

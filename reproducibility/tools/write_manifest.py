@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Write or verify SHA-256 hashes for the public package's source inputs."""
+"""Write or verify the SHA-256 manifest of the public package's files.
+
+``--write`` regenerates ``MANIFEST.sha256`` with one hash line per tracked
+file; ``--check`` recomputes every hash and fails if the manifest is
+missing or stale.  Generated figures and build directories are excluded.
+"""
 
 from __future__ import annotations
 

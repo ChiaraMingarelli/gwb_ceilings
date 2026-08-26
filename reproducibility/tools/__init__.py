@@ -1,2 +1,2 @@
-"""Release-audit and legacy-layout tools."""
+"""Release checks and manuscript-asset tooling for the public package."""
 

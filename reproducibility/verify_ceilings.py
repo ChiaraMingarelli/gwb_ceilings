@@ -1,22 +1,37 @@
 #!/usr/bin/env python3
-"""Authoritative calculations for the Paper-I channel ledger.
+"""Verification calculations for the energetic ceilings and benchmarks of
+astrophysical gravitational-wave backgrounds.
+
+This script reproduces every quantitative result of Mingarelli (2026),
+"Energetic Ceilings and Benchmarks of Astrophysical Gravitational-Wave
+Backgrounds", arXiv:2601.18859: the six channel benchmark spectra and their
+upper limits (SMBHB, AGN--IMRI, EMRI, BNS, Pop III BBH, and stellar-mass BBH;
+Secs. III A and III B, Tables 2 and 3), the per-channel integrated energies
+E_i = integral Omega_i dln f and their sums (Eq. (7), Eq. (34), Eq. (35), and
+Sec. II B), the propagation of GWTC-5 merger-rate intervals into those
+benchmarks (Table 1 and App. B), and the SMBHB census population moment in the
+PTA band (Sec. III A 1, Eqs. (9)--(12)).
 
 The module is deliberately import-safe: figure scripts import ``build_results``
-and ``build_spectra`` so that manuscript numbers and plotted spectra cannot
-drift apart.  Running it prints the calculation ledger and can also emit JSON
-scalars or NPZ spectra.
+and ``build_spectra`` so that quoted numbers and plotted spectra cannot
+drift apart.  Running it prints a human-readable verification report and can
+also emit JSON scalars or NPZ spectra.
 
-The scalar construction is applied channel by channel:
+The scalar construction follows the universal scaling relation of Eq. (6) of
+the paper, applied channel by channel:
 
-    rho_src = f_merge * rho_res,       f_merge >= 0.
+    rho_src = f_merge * rho_res,       f_merge >= 0,
 
-Values above unity are allowed when the same mass contributes to successive
-events.  Efficiency, cosmological dilution, and spectral support are then
-applied for that channel.  Normalized spectral shapes are used only as an internal
-numerical device to keep a channel's integrated radiated energy tied to its
-own waveform support; they are not the paper's organizing formalism.  The
-SMBHB calculation remains a separate full Liepold--Ma population moment and
-never passes through a lumped efficiency/cutoff proxy.
+where ``rho_res`` is a channel's available mass reservoir and ``rho_src`` the
+mass density it actually processes through mergers (both in Msun Mpc^-3;
+defined in Sec. II A of the paper, ahead of Eq. (3)).  Values of ``f_merge`` above unity are allowed when
+the same mass contributes to successive events.  A radiative efficiency,
+cosmological dilution, and spectral support are then applied for that channel.
+Normalized spectral shapes are used only as an internal numerical device to
+keep a channel's integrated radiated energy tied to its own waveform support;
+they are not the paper's organizing formalism.  The SMBHB calculation remains
+a separate full Liepold--Ma population moment (Sec. III A 1) and never passes
+through a lumped efficiency/cutoff proxy.
 
 Primary numerical sources
 -------------------------
@@ -56,10 +71,13 @@ only as a sensitivity calculation.  The adopted Pop-III benchmark sends one
 percent of the Liu--Bromm formation history through prompt, nonspinning
 50+50-Msun mergers; the prompt mapping is a declared model assumption.
 
-Reproduce the ledger from this directory
-----------------------------------------
+Reproduce the results from this directory
+-----------------------------------------
     python verify_ceilings.py --json results/step3-numbers.json \
         --npz results/step3-spectra.npz
+
+The output file names (and the JSON key ``step3b_integrated_energy``) keep
+their historical names so that frozen results and pinned hashes stay valid.
 """
 
 from __future__ import annotations
@@ -75,8 +93,8 @@ from typing import Callable
 
 import numpy as np
 
-# NumPy 2 renamed ``trapz`` to ``trapezoid``.  The calculation runtime uses
-# the new spelling, while the local plotting environment still uses NumPy 1.x.
+# NumPy 2 renamed ``trapz`` to ``trapezoid``.  This shim lets the script use
+# the new spelling while remaining runnable under NumPy 1.x.
 if not hasattr(np, "trapezoid"):
     setattr(np, "trapezoid", np.trapz)
 
@@ -97,19 +115,30 @@ OMEGA_M = 0.3
 OMEGA_LAMBDA = 0.7
 
 RHO_CRIT_SI = 3.0 * H0_SI**2 / (8.0 * math.pi * G_SI)
+# Critical density in Msun Mpc^-3; the global energy budget of Eq. (3) of
+# the paper is expressed in these units.
 RHO_CRIT = RHO_CRIT_SI * MPC_SI**3 / MSUN_SI
+# Local stellar mass density, Msun Mpc^-3 (0.5 percent of critical).
 RHO_STAR = 5.0e-3 * RHO_CRIT
+# Liepold & Ma (2024) SMBH mass density rho_bullet, Msun Mpc^-3 (Eq. (9)).
 RHO_BH_LM24 = 1.8e6
+# Frequency window (Hz) over which the SMBHB spectra are emitted for display.
 SMBHB_PTA_DISPLAY_MIN_HZ = 1.0e-9
 SMBHB_PTA_DISPLAY_MAX_HZ = 1.0e-7
 SMBHB_Q_MIN = 0.1
 SMBHB_Q_MAX = 1.0
 SMBHB_REPEATED_CEILING_Q = 1.0
+# Repeated-merger boost of Eq. (12): the geometric sum over prior equal-mass
+# generations multiplies h_c^2 by 2.70 (total 3.18 with q=1 and z->0).
 SZQ_HIERARCHY_HC2_BOOST = 1.0 / (1.0 - 2.0 ** (-2.0 / 3.0))
 SZQ_HIERARCHY_STRAIN_BOOST = math.sqrt(SZQ_HIERARCHY_HC2_BOOST)
+# Fiducial NSC-to-stellar mass fraction for the EMRI reservoir (Eq. (20)).
 ETA_NSC_FIDUCIAL = 1.0e-3
+# Closed-pool EMRI merger fraction for the upper limit of Eq. (24).
 EMRI_CLOSED_POOL_F_MERGE = 0.03
+# Planck-calibrated Pop III stellar inventory cap, Msun Mpc^-3 (Eq. (30)).
 POPIII_CEILING_RHO_MSUN_MPC3 = 2.0e5
+# Wright, Giblin & Hazboun pre-recombination Delta-N_eff inputs.
 WRIGHT_DELTA_NEFF_95 = 0.284
 WRIGHT_H = 0.674
 GIBLIN_THRANE_PEAK_LEVELS = {
@@ -211,7 +240,10 @@ def trapezoid_quadrature_weights(grid: np.ndarray) -> np.ndarray:
 
 
 def hc_from_omega(f_hz: float | np.ndarray, omega: float | np.ndarray) -> np.ndarray:
-    """Characteristic strain corresponding to Omega_gw."""
+    """Dimensionless characteristic strain h_c(f) for a given Omega_gw(f).
+
+    Inverts Eq. (1) of the paper; ``f_hz`` is the observed frequency in Hz.
+    """
 
     f = np.asarray(f_hz, dtype=float)
     om = np.asarray(omega, dtype=float)
@@ -219,7 +251,10 @@ def hc_from_omega(f_hz: float | np.ndarray, omega: float | np.ndarray) -> np.nda
 
 
 def omega_from_hc(f_hz: float | np.ndarray, hc: float | np.ndarray) -> np.ndarray:
-    """Omega_gw corresponding to characteristic strain."""
+    """Dimensionless energy-density spectrum Omega_gw(f) for a strain h_c(f).
+
+    This is Eq. (1) of the paper; ``f_hz`` is the observed frequency in Hz.
+    """
 
     f = np.asarray(f_hz, dtype=float)
     h = np.asarray(hc, dtype=float)
@@ -251,7 +286,12 @@ def kerr_isco_frequency(
     spin: float,
     redshift: float = 0.0,
 ) -> float:
-    """Observed quadrupolar GW frequency at the Kerr ISCO."""
+    """Observed quadrupolar GW frequency (Hz) at the Kerr ISCO.
+
+    For ``spin=0`` this reduces to the Schwarzschild ISCO frequency of
+    Eq. (10) of the paper.  ``total_mass_msun`` is the source-frame total
+    mass in Msun.
+    """
 
     if total_mass_msun <= 0.0:
         raise ValueError("total_mass_msun must be positive.")
@@ -273,7 +313,8 @@ def mass_for_kerr_isco_frequency(
     spin: float,
     redshift: float = 0.0,
 ) -> float:
-    """Total source-frame mass whose Kerr ISCO is at an observed frequency."""
+    """Total source-frame mass (Msun) whose Kerr ISCO sits at an observed
+    frequency (Hz); the inverse of ``kerr_isco_frequency``."""
 
     if observed_frequency_hz <= 0.0:
         raise ValueError("observed_frequency_hz must be positive.")
@@ -294,11 +335,14 @@ def peters_energy_spectrum(
     source_frequency_hz: float | np.ndarray,
     chirp_mass_msun: float,
 ) -> np.ndarray:
-    """Leading-order circular-inspiral ``dE/df`` in SI units.
+    """Leading-order circular-inspiral ``dE/df`` in SI units (J/Hz).
 
-    This is the Peters--Mathews spectrum
+    This is the Peters--Mathews spectrum underlying the circular-inspiral
+    energy accounting of Eq. (8) of the paper,
 
-        dE/df = (pi G)^(2/3) M_chirp^(5/3) f^(-1/3) / 3.
+        dE/df = (pi G)^(2/3) M_chirp^(5/3) f^(-1/3) / 3,
+
+    with the source-frame frequency in Hz and chirp mass in Msun.
     """
 
     frequency = np.asarray(source_frequency_hz, dtype=float)
@@ -319,7 +363,12 @@ def peters_inspiral_efficiency(
     eta: float,
     source_cutoff_hz: float,
 ) -> float:
-    """Rest-mass efficiency obtained by integrating the Peters spectrum."""
+    """Dimensionless rest-mass radiative efficiency epsilon from integrating
+    the Peters--Mathews spectrum up to a source-frame cutoff (Hz).
+
+    This supplies the inspiral-only efficiencies of Table 2 of the paper
+    (e.g. the BNS value of Sec. III B 2).
+    """
 
     if total_mass_msun <= 0.0:
         raise ValueError("total_mass_msun must be positive.")
@@ -342,11 +391,14 @@ def inspiral_amplitude(
     f_ref_hz: float,
     redshift: float = 0.0,
 ) -> float:
-    """Amplitude of the normalized f^(2/3) energy shape for one redshift.
+    """Characteristic-strain amplitude (dimensionless) of the normalized
+    f^(2/3) energy shape for a single-redshift population.
 
-    This helper is used for channels whose model is explicitly truncated in
-    the inspiral.  It is not used for the SMBHB population-moment result or
-    the full-IMR BBH entries.  ``f_max_hz`` is the source-frame cutoff.
+    Implements the universal scaling relation, Eq. (6) of the paper, for
+    channels whose model is explicitly truncated in the inspiral.  It is not
+    used for the SMBHB population-moment result or the full-IMR BBH entries.
+    ``rho_src`` is in Msun Mpc^-3 and ``f_max_hz`` is the source-frame
+    cutoff frequency in Hz.
     """
 
     present_budget = epsilon * rho_src / ((1.0 + redshift) * RHO_CRIT)
@@ -373,11 +425,13 @@ def inspiral_shape(f_hz: np.ndarray, f_max_hz: float) -> np.ndarray:
 def lisa_transfer_parenthesization_ratio(
     frequency_hz: float | np.ndarray,
 ) -> np.ndarray:
-    """Correct/legacy LISA noise-power ratio for the V5 audit.
+    """Ratio (dimensionless) of the corrected to the legacy LISA noise power.
 
-    The legacy expression multiplied only the acceleration term by the
-    Robson--Cornish--Liu transfer factor.  The correct expression multiplies
-    the full optical-metrology-plus-acceleration bracket.
+    Recorded as a verification of the sensitivity curves shown for context in
+    Sec. IV of the paper.  The legacy expression multiplied only the
+    acceleration term by the Robson--Cornish--Liu transfer factor; the
+    correct expression multiplies the full optical-metrology-plus-acceleration
+    bracket.  ``frequency_hz`` is in Hz.
     """
 
     frequency = np.asarray(frequency_hz, dtype=float)
@@ -396,7 +450,11 @@ def lisa_transfer_parenthesization_ratio(
 
 
 def detector_context_audit() -> dict[str, object]:
-    """Fixed detector anchors; Figure 2 uses the LISA/BBO/CE subset."""
+    """Fixed detector sensitivity anchors used for context in Sec. IV.
+
+    Figure 2 of the paper uses the LISA/BBO/CE subset.  These curves are
+    illustrative context only; no population ceiling depends on them.
+    """
 
     lisa_ratios = lisa_transfer_parenthesization_ratio(
         np.asarray([20.0e-3, 40.0e-3])
@@ -431,7 +489,13 @@ def detector_context_audit() -> dict[str, object]:
 
 @dataclass(frozen=True)
 class LM24Parameters:
-    """Erratum-corrected single-Schechter fit, for h=0.7."""
+    """Erratum-corrected Liepold & Ma (2024) single-Schechter black-hole
+    mass-function fit, for h=0.7.
+
+    This is the census behind the SMBH mass density rho_bullet of Eq. (9)
+    of the paper (Sec. III A 1).  Masses are in Msun, number densities in
+    Mpc^-3.
+    """
 
     alpha: float = -1.27
     beta: float = 0.45
@@ -451,7 +515,12 @@ LM24 = LM24Parameters()
 
 
 def lm24_mass_moment(power: float, params: LM24Parameters = LM24) -> float:
-    """Integral M^power dn for the corrected analytic BHMF."""
+    """Analytic mass moment integral M^power dn of the corrected LM24 BHMF.
+
+    Returned in Msun^power Mpc^-3; ``power = 1`` gives the SMBH mass density
+    entering Eq. (9) of the paper, and ``power = 5/3`` the strain moment of
+    Eq. (11).
+    """
 
     gamma_arg = (params.alpha + power + 1.0) / params.beta
     if gamma_arg <= 0.0:
@@ -482,7 +551,9 @@ def simpson_scalar(
 
 
 def lm24_eta_moment() -> float:
-    """<eta> for p(q) proportional to q^2 on 0.1 <= q <= 1."""
+    """Mean symmetric mass ratio <eta> (dimensionless) for the LM24 benchmark
+    mass-ratio distribution p(q) proportional to q^2 on 0.1 <= q <= 1
+    (Sec. III A 1 of the paper)."""
 
     numerator = simpson_scalar(
         lambda q: q**2 * q / (1.0 + q) ** 2,
@@ -500,7 +571,9 @@ def lm24_eta_moment() -> float:
 
 
 def lm24_redshift_moment() -> float:
-    """<(1+z)^(-1/3)> for p(z) proportional to z exp[-(z/0.5)^2]."""
+    """Redshift moment <(1+z)^(-1/3)> (dimensionless) for the benchmark
+    SMBHB merger-redshift distribution p(z) proportional to
+    z exp[-(z/0.5)^2] entering the amplitude scaling of Eq. (11)."""
 
     weight = lambda z: z * math.exp(-((z / 0.5) ** 2))
     numerator = simpson_scalar(
@@ -514,7 +587,9 @@ def lm24_redshift_moment() -> float:
 
 
 def lm24_energy_dilution_moment() -> float:
-    """<(1+z)^(-1)> for the LM24 benchmark redshift distribution."""
+    """Energy-dilution moment <(1+z)^(-1)> (dimensionless) for the LM24
+    benchmark redshift distribution, as used in the cosmological energy
+    integral of Eq. (2) of the paper."""
 
     weight = lambda z: z * math.exp(-((z / 0.5) ** 2))
     numerator = simpson_scalar(
@@ -533,7 +608,13 @@ def smbhb_strain_from_i53(
     redshift_moment: float,
     frequency_hz: float = F_YEAR_HZ,
 ) -> float:
-    """Phinney population-moment strain for circular GW-driven binaries."""
+    """Characteristic strain h_c (dimensionless) at ``frequency_hz`` from the
+    Phinney population moment for circular GW-driven binaries.
+
+    This is the SMBHB amplitude scaling of Eq. (11) of the paper;
+    ``i53_msun53_mpc3`` is the mass moment integral M^(5/3) dn in
+    Msun^(5/3) Mpc^-3 and the default frequency is 1/yr.
+    """
 
     i53_si = i53_msun53_mpc3 * MSUN_SI ** (5.0 / 3.0) / MPC_SI**3
     hc2 = (
@@ -551,7 +632,9 @@ def smbhb_strain_from_i53(
 
 @dataclass(frozen=True)
 class SZQ24Parameters:
-    """Fiducial VDF and M-sigma inputs of Sato-Polito et al. (2024)."""
+    """Fiducial velocity-dispersion-function and M-sigma inputs of
+    Sato-Polito et al. (2024), used for the independent amplitude-ladder
+    comparison of App. A and Table 4 of the paper."""
 
     phi_mpc3: float = 2.61e-2
     sigma_star_km_s: float = 159.6
@@ -580,7 +663,8 @@ def szq24_vdf_mass_moment(
     power: float,
     params: SZQ24Parameters = SZQ24,
 ) -> float:
-    """Return integral phi(M) M^power dM for the fiducial SZQ24 census."""
+    """Mass moment integral phi(M) M^power dM of the fiducial SZQ24 census,
+    in Msun^power Mpc^-3 (App. A of the paper)."""
 
     gamma_arg = (params.alpha + power * params.mass_slope) / params.beta
     if gamma_arg <= 0.0:
@@ -598,7 +682,8 @@ def szq24_vdf_mass_moment(
 
 
 def szq24_eta_moment(params: SZQ24Parameters = SZQ24) -> float:
-    """Return <eta> for normalized p(q) proportional to q^-1."""
+    """Mean symmetric mass ratio <eta> (dimensionless) for the SZQ24
+    log-uniform mass-ratio distribution p(q) proportional to q^-1."""
 
     numerator = (
         1.0 / (1.0 + params.q_min)
@@ -608,7 +693,8 @@ def szq24_eta_moment(params: SZQ24Parameters = SZQ24) -> float:
 
 
 def szq24_redshift_moment(params: SZQ24Parameters = SZQ24) -> float:
-    """Return <(1+z)^(-1/3)> for the fiducial SZQ24 redshift law."""
+    """Redshift moment <(1+z)^(-1/3)> (dimensionless) for the fiducial SZQ24
+    merger-redshift distribution."""
 
     normalization = (
         params.redshift_scale ** (params.redshift_power + 1.0)
@@ -632,7 +718,13 @@ def szq24_redshift_moment(params: SZQ24Parameters = SZQ24) -> float:
 
 
 def szq24_population_moment_audit() -> dict[str, object]:
-    """Independent evaluation of the SZQ24 one-pass population moment."""
+    """Independent evaluation of the SZQ24 one-pass population moment.
+
+    Reproduces the amplitude ladder of App. A and Table 4 of the paper from
+    the fiducial SZQ24 inputs, including the equal-mass and z=0 variants and
+    the repeated-merger (hierarchy) strain boost of Eq. (12).  All amplitudes
+    are dimensionless characteristic strains at f = 1/yr.
+    """
 
     rho_bh = szq24_vdf_mass_moment(1.0)
     i53 = szq24_vdf_mass_moment(5.0 / 3.0)
@@ -701,7 +793,14 @@ def szq24_population_moment_audit() -> dict[str, object]:
 def smbhb_population_results() -> dict[str, float | str | None]:
     """LM24 SMBHB results from the full analytic population moment.
 
-    The adopted result imposes no additional primary-mass selection.
+    Computes the PTA-band SMBHB benchmark amplitude (Eq. (11) of the paper),
+    the equal-mass z=0 conditional-ceiling amplitude, and the repeated-merger
+    ceiling of Eq. (12) (a factor 2.70 in h_c^2 relative to the latest
+    generation; total 3.18 with q=1 and z->0), together with the f_merge
+    correspondences of Eqs. (13)--(14) (Sec. III A 1).  Amplitudes are
+    dimensionless characteristic strains at f = 1/yr; mass densities are in
+    Msun Mpc^-3.  The adopted result imposes no additional primary-mass
+    selection.
     """
 
     i1_fit = lm24_mass_moment(1.0)
@@ -787,7 +886,8 @@ def smbhb_population_results() -> dict[str, float | str | None]:
         "redshift_moment": zfac,
         "benchmark_A_1yr": benchmark,
         # Base normalization for the equal-mass, z=0 spectrum before the
-        # earlier generations in the SZQ24 repeated-merger history are added.
+        # earlier generations of the repeated-merger history (Eq. (12) of
+        # the paper) are added.
         "conditional_ceiling_A_1yr": equal_mass_latest_generation,
         "equal_mass_latest_generation_A_1yr": equal_mass_latest_generation,
         "szq_hierarchy_hc2_boost": SZQ_HIERARCHY_HC2_BOOST,
@@ -809,11 +909,13 @@ def smbhb_population_results() -> dict[str, float | str | None]:
 def smbhb_isco_support_audit(
     spin: float = 0.0,
 ) -> dict[str, float | str | None]:
-    """Effect of a mass/redshift-dependent ISCO mask at ``1/yr``.
+    """Effect of a mass/redshift-dependent ISCO mask at ``f = 1/yr``.
 
     The quoted low-frequency population moment uses the full analytic LM24
     fit.  This diagnostic measures the small additional effect of terminating
-    every source at its own Kerr ISCO.
+    every source at its own Kerr ISCO frequency (the spin generalization of
+    the Schwarzschild ISCO frequency, Eq. (10) of the paper).
+    Strains are dimensionless; masses in Msun.
     """
 
     mass_limit_z0 = mass_for_kerr_isco_frequency(F_YEAR_HZ, spin, 0.0)
@@ -878,7 +980,8 @@ def lm24_moment_fraction_below(
     mass_limit_msun: float | np.ndarray,
     power: float = 5.0 / 3.0,
 ) -> np.ndarray:
-    """Fraction of an LM24 mass moment below a source-frame mass limit."""
+    """Fraction (dimensionless) of an LM24 mass moment contributed by
+    black holes below a source-frame mass limit in Msun."""
 
     limits = np.asarray(mass_limit_msun, dtype=float)
     if np.any(limits <= 0.0):
@@ -898,7 +1001,12 @@ def smbhb_population_moment_factor(
     power: float,
     eta_weighted: bool = True,
 ) -> float:
-    """LM24 moment factor for the adopted full analytic census."""
+    """Dimensionless mass-ratio weighting factor for the LM24 census.
+
+    The benchmark uses the p(q) proportional to q^2 mean of ``lm24_eta_moment``;
+    the conditional ceiling uses the equal-mass value q/(1+q)^2 = 1/4 required
+    by the repeated-merger construction of Eq. (12) of the paper.
+    """
 
     if kind == "benchmark":
         return lm24_eta_moment() if eta_weighted else 1.0
@@ -914,7 +1022,8 @@ def smbhb_supported_moment_factor(
     *,
     power: float = 5.0 / 3.0,
 ) -> np.ndarray:
-    """Eta-weighted moment below a frequency-dependent total-mass limit."""
+    """Eta-weighted LM24 moment fraction (dimensionless) below a
+    frequency-dependent total-mass limit in Msun."""
 
     limits = np.asarray(mass_limit_msun, dtype=float)
     upper_fraction = lm24_moment_fraction_below(limits, power=power)
@@ -927,7 +1036,11 @@ def smbhb_supported_moment_factor(
 
 
 def peters_isco_efficiency_per_eta(spin: float = 0.0) -> float:
-    """Newtonian inspiral-to-Kerr-ISCO efficiency divided by eta."""
+    """Newtonian circular-inspiral radiative efficiency down to the Kerr
+    ISCO, divided by the symmetric mass ratio eta (dimensionless).
+
+    Used for the SMBHB integrated-energy accounting of Eq. (8) of the paper.
+    """
 
     radius = kerr_isco_radius(spin)
     frequency_factor = 1.0 / (radius ** (3.0 / 2.0) + float(spin))
@@ -938,11 +1051,13 @@ def smbhb_inspiral_present_budget(
     kind: str = "benchmark",
     spin: float = 0.0,
 ) -> float:
-    """Integrated present-day LM24 inspiral energy in units of rho_crit.
+    """Integrated present-day SMBHB inspiral energy (dimensionless), i.e.
+    E = integral Omega dln f in units of the critical density (Eq. (7) of
+    the paper, with the circular-inspiral energetics of Eq. (8)).
 
     The benchmark uses the LM24 q and z distributions.  The conditional
-    ceiling uses z=0 and q=1, as required by the adopted SZQ24 equal-mass
-    repeated-merger history.  Both integrate the modeled Newtonian inspiral
+    ceiling uses z=0 and q=1, as required by the equal-mass repeated-merger
+    construction of Eq. (12).  Both integrate the modeled Newtonian inspiral
     through the mass-dependent Kerr ISCO.  The adopted calculation uses the
     full analytic LM24 mass moment.
     """
@@ -972,11 +1087,13 @@ def smbhb_population_omega(
     kind: str = "benchmark",
     spin: float = 0.0,
 ) -> np.ndarray:
-    """Formal LM24 inspiral spectrum with source-by-source ISCO support.
+    """LM24 SMBHB inspiral spectrum Omega_gw(f) (dimensionless) with
+    source-by-source ISCO support, on an observed frequency grid in Hz.
 
-    This helper supports PTA checks.  The emitted archive masks the adopted
-    full-census result to its declared PTA display segment; scalar energies
-    come from analytic mass moments, not from integrating an emitted spectrum.
+    This helper supports checks in the PTA band (Sec. III A 1 of the paper).
+    The emitted archive masks the adopted full-census result to its declared
+    PTA display segment; scalar energies come from analytic mass moments, not
+    from integrating an emitted spectrum.
     """
 
     frequency = np.asarray(f_hz, dtype=float)
@@ -1029,7 +1146,9 @@ def smbhb_population_omega(
 
 
 def smbhb_fmerge_for_amplitude(amplitude: np.ndarray, rho_bh: np.ndarray) -> np.ndarray:
-    """Uniform-processing fraction for the fixed central LM24 shape."""
+    """Merger fraction f_merge (dimensionless) implied by a PTA amplitude
+    under the fixed central LM24 spectral shape (Eqs. (13)--(14) of the
+    paper); ``rho_bh`` is in Msun Mpc^-3."""
 
     anchor = smbhb_population_results()["benchmark_A_1yr"]
     return (np.asarray(amplitude) / anchor) ** 2 * RHO_BH_LM24 / np.asarray(rho_bh)
@@ -1046,7 +1165,12 @@ def phenomb_frequencies(
     chi: float,
     redshift: float = 0.0,
 ) -> tuple[float, float, float, float]:
-    """Observed (f_merg, f_ring, sigma, f_cut) from Ajith et al. (2009)."""
+    """Observed transition frequencies (f_merg, f_ring, sigma, f_cut), all in
+    Hz, from the Ajith et al. (2009) aligned-spin IMR phenomenology.
+
+    ``f_merg`` corresponds to the inspiral-to-merger transition entering the
+    f_IMR definition of Eq. (15) of the paper.
+    """
 
     if not 0.0 < eta <= 0.25:
         raise ValueError("eta must lie in (0, 0.25].")
@@ -1112,7 +1236,8 @@ def _phenomb_raw_p(
     chi: float,
     redshift: float,
 ) -> np.ndarray:
-    """Unnormalized f dE/df, proportional to f^3 |h_tilde(f)|^2."""
+    """Unnormalized f dE/df, proportional to f^3 |h_tilde(f)|^2 (Zhu et al.
+    2011, Eq. (5)), on an observed frequency grid in Hz."""
 
     f = np.asarray(f_hz, dtype=float)
     f_merg, f_ring, sigma, f_cut = phenomb_frequencies(
@@ -1187,11 +1312,14 @@ def phenomb_shape(
     chi: float = 0.0,
     redshift: float = 0.0,
 ) -> np.ndarray:
-    """Normalized observer-frame IMR energy shape for one domain point.
+    """Normalized observer-frame IMR energy shape p(f) (dimensionless,
+    integrating to unity in ln f) for one total mass (Msun) and redshift.
 
     IMRPhenomB is scale-free in ``M(1+z)f``.  Evaluating a cached 1-Msun
     reference shape makes redshift-history integration fast while preserving
-    the exact normalization in logarithmic frequency.
+    the exact normalization in logarithmic frequency.  These shapes give the
+    full inspiral-merger-ringdown support used by the Pop III and sBBH
+    channels (Secs. III B 3 and III B 4 of the paper).
     """
 
     normalization = _phenomb_reference_normalization(float(eta), float(chi))
@@ -1225,12 +1353,13 @@ def husa_radiated_fraction(
     chi1z: np.ndarray,
     chi2z: np.ndarray,
 ) -> np.ndarray:
-    """Aligned-spin radiated fraction used by IMRPhenomD.
+    """Aligned-spin radiated mass fraction (dimensionless) used by IMRPhenomD.
 
     This is the public LALSuite implementation of Husa et al. (2016), Eqs.
-    (3.6) and (3.8), copied algebraically so that this audit has no LALSuite
-    dependency.  It gives 0.04839 for equal-mass nonspinning binaries and
-    0.08051 for q=1, chi1z=chi2z=+0.7.
+    (3.6) and (3.8), copied algebraically so that this verification has no
+    LALSuite dependency.  It gives 0.04839 for equal-mass nonspinning
+    binaries and 0.08051 for q=1, chi1z=chi2z=+0.7 (the sBBH ceiling
+    efficiency of Sec. III B 4).  Masses are in Msun.
     """
 
     m1 = np.asarray(m1_msun, dtype=float)
@@ -1266,7 +1395,9 @@ def husa_radiated_fraction(
 def jimenez_forteza_nonspinning_radiated_fraction(
     eta: float | np.ndarray,
 ) -> np.ndarray:
-    """UIB2016/Jimenez-Forteza nonspinning radiated-energy polynomial."""
+    """UIB2016/Jimenez-Forteza nonspinning radiated-fraction polynomial
+    (dimensionless), retained as an independent equal-mass cross-check of
+    the Husa et al. (2016) fit."""
 
     symmetric_mass_ratio = np.asarray(eta, dtype=float)
     if np.any((symmetric_mass_ratio <= 0.0) | (symmetric_mass_ratio > 0.25)):
@@ -1281,7 +1412,8 @@ def jimenez_forteza_nonspinning_radiated_fraction(
 
 @lru_cache(maxsize=1)
 def gwtc5_bbh_population_weighting(samples: int = 300_000) -> dict[str, float]:
-    """Reproduce the rate-weighted mass and mass-weighted IMR efficiency.
+    """Reproduce the rate-weighted mean mass (Msun) and mass-weighted IMR
+    efficiency (dimensionless) for the sBBH channel (Sec. III B 4, Table 2).
 
     GWTC-5.0's compact public summaries do not provide a small posterior file
     for direct propagation.  This transparent approximation uses its quoted
@@ -1388,7 +1520,8 @@ def gwtc5_bbh_population_weighting(samples: int = 300_000) -> dict[str, float]:
 
 @dataclass(frozen=True)
 class FixedRedshiftHistory:
-    """A declared delta-function merger history."""
+    """A declared delta-function merger history: all processed mass
+    (Msun Mpc^-3) merges at one redshift."""
 
     rho_src_msun_mpc3: float
     redshift: float
@@ -1403,11 +1536,16 @@ class FixedRedshiftHistory:
 
 @dataclass(frozen=True)
 class RateHistory:
-    """A comoving source-frame rate integrated over a declared history.
+    """A comoving source-frame merger rate integrated over a declared history.
 
-    The rate is normalized at ``rate_anchor_redshift``.  ``rate_evolution_kappa
-    = 0`` is the adopted fixed-rate construction.  Nonzero kappa values are
-    sensitivity models, not posterior propagation.
+    The rate is in Gpc^-3 yr^-1, the mean merging mass in Msun, and the
+    lookback duration in Gyr; the resulting processed mass density
+    ``rho_src_msun_mpc3`` is in Msun Mpc^-3.  This is the constant-rate
+    construction behind the LVK-anchored channels (Sec. III B and Table 1 of
+    the paper; Eqs. (25)--(27) and (31)--(33)).  The rate is normalized at
+    ``rate_anchor_redshift``.  ``rate_evolution_kappa = 0`` is the adopted
+    fixed-rate construction; nonzero kappa values are sensitivity models,
+    not posterior propagation.
     """
 
     rate_gpc3_yr: float
@@ -1475,7 +1613,14 @@ class RateHistory:
 
 @dataclass(frozen=True)
 class PopIIIFormationHistory:
-    """Liu--Bromm Pop-III SFRD with a declared prompt-merger mapping."""
+    """Liu--Bromm Pop III star-formation-rate density (Msun yr^-1 Mpc^-3)
+    with a declared prompt-merger mapping.
+
+    Integrating the SFRD over z=4--30 gives the Pop III stellar inventory
+    rho_III in Msun Mpc^-3; ``processing_fraction`` of that inventory is sent
+    through prompt 50+50-Msun mergers (Sec. III B 3 of the paper,
+    Eqs. (28)--(30)).
+    """
 
     processing_fraction: float = 0.01
     redshift_min: float = 4.0
@@ -1525,7 +1670,14 @@ SourceHistory = FixedRedshiftHistory | RateHistory | PopIIIFormationHistory
 
 @dataclass(frozen=True)
 class AGNPipelinePoint:
-    """One point in the declared AGN--IMRI mass-flow domain."""
+    """One point in the declared AGN--IMRI mass-flow domain.
+
+    Encodes the source-density construction of Eqs. (16)--(19) of the paper
+    (Sec. III A 2): a fraction ``f_agn`` of the sBBH merger rate
+    (Gpc^-3 yr^-1) occurs in AGN disks, and a fraction ``kappa_im`` of that
+    mass (mean mass in Msun, over ``t_eff_gyr`` Gyr) is processed through
+    IMRIs.  Densities are in Msun Mpc^-3.
+    """
 
     kappa_im: float
     f_agn: float
@@ -1575,6 +1727,16 @@ AGN_CEILING_POINT = AGNPipelinePoint(1.0, 1.0, 49.4, 150.0, 13.0)
 
 @dataclass(frozen=True)
 class SpectralChannel:
+    """One GWB channel: a source history, a radiative efficiency epsilon
+    (dimensionless), and a normalized spectral shape.
+
+    ``omega`` returns the dimensionless Omega_gw(f) on an observed frequency
+    grid in Hz; ``present_budget`` is the integrated present-day energy
+    E = integral Omega dln f in units of the critical density (Eq. (7) of
+    the paper); ``hc_at_reference`` is the dimensionless characteristic
+    strain at ``f_ref_hz`` via Eq. (1).
+    """
+
     key: str
     label: str
     benchmark_or_ceiling: str
@@ -1644,7 +1806,17 @@ class SpectralChannel:
 
 
 def channel_inputs() -> dict[str, SpectralChannel]:
-    """Return the Step-3 recommended channel calculations."""
+    """Return the adopted channel definitions: each channel's benchmark and
+    upper-limit (ceiling) inputs.
+
+    These are the population parameters of Tables 2 and 3 of the paper:
+    EMRI (Sec. III B 1, Eqs. (20)--(24)), AGN--IMRI (Sec. III A 2,
+    Eqs. (16)--(19)), BNS (Sec. III B 2, Eqs. (25)--(27)), Pop III BBH
+    (Sec. III B 3, Eqs. (28)--(30)), and stellar-mass BBH (Sec. III B 4,
+    Eqs. (31)--(33)).  The SMBHB channel is computed separately as a
+    population moment (Sec. III A 1).  Rates are in Gpc^-3 yr^-1, masses in
+    Msun, reference frequencies in Hz.
+    """
 
     bbh_weighting = gwtc5_bbh_population_weighting()
     bns_benchmark = RateHistory(
@@ -1848,11 +2020,14 @@ def channel_inputs() -> dict[str, SpectralChannel]:
 def rate_only_benchmark_interval_results(
     channels: dict[str, SpectralChannel] | None = None,
 ) -> dict[str, object]:
-    """Propagate the model-specific GWTC-5 rate intervals.
+    """Propagate the model-specific GWTC-5 merger-rate intervals (Table 1 of
+    the paper) into each rate-anchored benchmark.
 
-    Every other channel input is fixed.  The low, median, and high rate
-    values are evaluated directly rather than combined into a joint
-    population posterior.
+    Every other channel input is fixed, so amplitudes scale as sqrt(R) and
+    energies as R (through rho_src in the universal scaling relation,
+    Eq. (6) of the paper).  The low, median, and high rate
+    values (Gpc^-3 yr^-1) are evaluated directly rather than combined into a
+    joint population posterior.
     """
 
     channel_map = channel_inputs() if channels is None else channels
@@ -1962,7 +2137,7 @@ def rate_only_benchmark_interval_results(
     return output
 
 
-STEP3B_BENCHMARK_CHANNEL_KEYS = (
+INTEGRATED_SUM_BENCHMARK_KEYS = (
     "emri_benchmark",
     "agn_imri_benchmark",
     "bns_benchmark",
@@ -1970,7 +2145,7 @@ STEP3B_BENCHMARK_CHANNEL_KEYS = (
     "bbh_benchmark",
 )
 
-STEP3B_CEILING_CHANNEL_KEYS = (
+INTEGRATED_SUM_CEILING_KEYS = (
     "emri_closed_pool_ceiling",
     "agn_imri_ceiling",
     "bns_ceiling",
@@ -1980,7 +2155,9 @@ STEP3B_CEILING_CHANNEL_KEYS = (
 
 
 def lm24_full_imr_efficiency_moment(spin: float = 0.0) -> float:
-    """Mass-weighted Husa efficiency for the full analytic census."""
+    """Mass-weighted Husa radiated fraction (dimensionless) averaged over the
+    LM24 census mass-ratio distribution; a full-IMR sensitivity case for the
+    SMBHB integrated energy."""
 
     q = np.linspace(SMBHB_Q_MIN, SMBHB_Q_MAX, 20_001)
     weight = q**2
@@ -1996,8 +2173,18 @@ def lm24_full_imr_efficiency_moment(spin: float = 0.0) -> float:
     )
 
 
-def step3b_integrated_energy_results() -> dict[str, object]:
-    """Integrated benchmark and one-generation conditional ceiling sums."""
+def integrated_energy_results() -> dict[str, object]:
+    """Integrated benchmark and one-generation conditional ceiling sums.
+
+    Computes each channel's integrated present-day energy E_i = integral
+    Omega_i dln f (dimensionless, in units of the critical density; Eq. (7)
+    of the paper), the six-channel benchmark energy sum of Eq. (34), and the
+    integrated reference sum over the upper-limit cases of Eq. (35)
+    (Sec. II B).  Also records rate-driven envelopes and the
+    pre-recombination Delta-N_eff context.  Stored in the output JSON under
+    the historical key ``step3b_integrated_energy`` so that frozen results
+    and pinned hashes stay valid.
+    """
 
     channels = channel_inputs()
     smbhb = smbhb_population_results()
@@ -2025,7 +2212,7 @@ def step3b_integrated_energy_results() -> dict[str, object]:
             "present_integral_omega_dlnf": smbhb_inspiral_present_budget(),
         }
     }
-    for key in STEP3B_BENCHMARK_CHANNEL_KEYS:
+    for key in INTEGRATED_SUM_BENCHMARK_KEYS:
         channel = channels[key]
         rows[key] = {
             "label": channel.label,
@@ -2178,7 +2365,7 @@ def step3b_integrated_energy_results() -> dict[str, object]:
             "repeated_merger_factor_included": False,
         }
     }
-    for key in STEP3B_CEILING_CHANNEL_KEYS:
+    for key in INTEGRATED_SUM_CEILING_KEYS:
         channel = channels[key]
         output_key = (
             "bbh_ceiling_realizable_chi0p7"
@@ -2294,7 +2481,8 @@ def step3b_integrated_energy_results() -> dict[str, object]:
                 "population and is never integrated."
             ),
             "galactic_dwd_foreground": (
-                "Contextual Galactic foreground outside the cosmological ledger."
+                "Contextual Galactic foreground outside the cosmological "
+                "energy accounting (Sec. III C)."
             ),
             "broadband_smbhb_composite_cumulative": (
                 "Retired: only the full-census PTA display segment is emitted; "
@@ -2383,9 +2571,11 @@ def bbh_aligned_spin_ceiling(
     f_hz: np.ndarray,
     spin_samples: int = 141,
 ) -> np.ndarray:
-    """Pointwise sBBH ceiling over the declared aligned-spin domain.
+    """Pointwise sBBH ceiling Omega_gw(f) (dimensionless) over the declared
+    aligned-spin domain, on an observed frequency grid in Hz (Sec. III B 4).
 
-    The table quotes the maximizing endpoint at 25 Hz, q=1 and chi=+0.7.
+    Table 3 of the paper quotes the maximizing endpoint at 25 Hz, q=1 and
+    chi=+0.7.
     Across the full plotted band, however, changing spin moves energy between
     inspiral, merger, and ringdown.  The dashed curve must therefore maximize
     B(chi) p(f|chi) independently at each frequency.  The public Husa
@@ -2431,7 +2621,13 @@ def bbh_aligned_spin_ceiling(
 
 
 def nsc_density_audit() -> dict[str, float | str]:
-    """Integrate the NSC--host relation over the local Baldry GSMF."""
+    """Integrate the nuclear-star-cluster--host relation over the local
+    Baldry galaxy stellar mass function.
+
+    Cross-checks the NSC mass fraction eta_NSC that sets the EMRI reservoir
+    of Eq. (20) of the paper (Sec. III B 1).  Densities are in Msun Mpc^-3;
+    eta values are dimensionless.
+    """
 
     log_mass = np.linspace(7.0, 12.0, 20_001)
     x = 10.0 ** (log_mass - 10.66)
@@ -2480,7 +2676,8 @@ BONETTI_SESANA_EMRI_MODELS: dict[str, tuple[float, float]] = {
 
 
 def comoving_volume_mpc3(redshift: float) -> float:
-    """Full-sky comoving volume in the adopted flat cosmology."""
+    """Full-sky comoving volume in Mpc^3 out to ``redshift`` in the adopted
+    flat Lambda-CDM cosmology."""
 
     z = np.linspace(0.0, redshift, 20_001)
     distance_mpc = (
@@ -2492,10 +2689,12 @@ def comoving_volume_mpc3(redshift: float) -> float:
 def emri_rate_proxy_audit() -> dict[str, object]:
     """Convert published all-sky EMRI rates to a transparent mass proxy.
 
-    This deliberately reproduces the old uniform-volume, 10-Gyr conversion
-    only to show why f_merge=1e-4 is a motivated scale.  The source paper does
-    not publish the redshift distribution needed to turn its observer-time
-    all-sky totals into a unique cosmic processed density.
+    A uniform-volume, 10-Gyr conversion of the Babak et al. model rates
+    (yr^-1) to processed mass densities (Msun Mpc^-3), used only to show why
+    the f_merge = 1e-4 benchmark of Sec. III B 1 (Eqs. (22)--(23) of the
+    paper) is a motivated scale.  The source paper does not publish the
+    redshift distribution needed to turn its observer-time all-sky totals
+    into a unique cosmic processed density.
     """
 
     volume = comoving_volume_mpc3(4.5)
@@ -2524,7 +2723,13 @@ def emri_rate_proxy_audit() -> dict[str, object]:
 
 
 def agn_pipeline_audit() -> dict[str, object]:
-    """Verify the AGN rectangular-domain maximum by enumerating all corners."""
+    """Verify the AGN--IMRI rectangular-domain maximum by enumerating all
+    corners of the declared input ranges.
+
+    The upper limit of Eq. (19) of the paper (Sec. III A 2) is the maximum of
+    the processed IMRI mass density (Msun Mpc^-3) over this domain; the
+    benchmark point corresponds to Eqs. (16)--(17).
+    """
 
     ranges = {
         "kappa_im": (0.05, 1.0),
@@ -2569,14 +2774,18 @@ def agn_pipeline_audit() -> dict[str, object]:
 
 
 def fixed_z0_copy(channel: SpectralChannel) -> SpectralChannel:
-    """Return the prior no-dilution convention for traceability."""
+    """Copy of a channel with its history collapsed to z=0.
+
+    This removes redshift dilution and support shifting; it is reported only
+    as a comparison case for tracing how much the explicit history matters.
+    """
 
     return replace(
         channel,
         history=FixedRedshiftHistory(
             channel.rho_src_msun_mpc3,
             0.0,
-            "Traceability-only no-dilution convention",
+            "No-dilution comparison case: history collapsed to z=0",
         ),
     )
 
@@ -2584,7 +2793,15 @@ def fixed_z0_copy(channel: SpectralChannel) -> SpectralChannel:
 def history_sensitivity_audit(
     channels: dict[str, SpectralChannel],
 ) -> dict[str, object]:
-    """Compare adopted explicit histories with traceability/sensitivity cases."""
+    """Compare the adopted explicit source histories with comparison and
+    sensitivity cases.
+
+    Covers the no-dilution comparison, GWTC-5 rate-evolution sensitivities,
+    the inversion of the LVK O4a stochastic upper limits (App. B of the
+    paper, Eqs. (B1)--(B5)), and the Pop III inventory variants of
+    Sec. III B 3.  Densities are in Msun Mpc^-3; strains and Omega values
+    are dimensionless.
+    """
 
     traceability: dict[str, dict[str, float]] = {}
     for key, channel in channels.items():
@@ -2784,7 +3001,13 @@ def history_sensitivity_audit(
 
 
 def one_pass_audit(channels: dict[str, SpectralChannel]) -> dict[str, object]:
-    """Record where the scalar one-pass bound is load-bearing."""
+    """Record where the scalar one-pass bound (f_merge <= 1 in the scaling
+    relation of Eq. (6) of the paper) is load-bearing.
+
+    Lists every adopted channel input fraction (all dimensionless) and checks
+    which inferred PTA amplitudes stay inside the one-pass family
+    (Sec. III A 1).
+    """
 
     adopted_input_fractions = {
         "smbhb_fixed_shape_benchmark_f_merge": 1.0,
@@ -2841,7 +3064,11 @@ def one_pass_audit(channels: dict[str, SpectralChannel]) -> dict[str, object]:
 def spectral_diagnostics(
     channels: dict[str, SpectralChannel],
 ) -> dict[str, object]:
-    """Per-channel checks used by the table and later figure regeneration."""
+    """Per-channel spectral checks used by the paper's tables and figures.
+
+    Reports each deci-Hz channel's Omega_gw at 0.3 Hz and the Pop III
+    spectral peak (frequency in Hz, Omega dimensionless; Sec. III B 3).
+    """
 
     comparison_frequency = 0.3
     comparison = {
@@ -2863,7 +3090,17 @@ def spectral_diagnostics(
 
 
 def build_results() -> dict[str, object]:
-    """Build all Step-3 scalars from the approved channel ledger."""
+    """Build every scalar verification result from the adopted channel
+    definitions.
+
+    Returns the full nested dictionary written to results/step3-numbers.json
+    (historical file name, kept so frozen results and pinned hashes stay
+    valid): cosmological constants, the SMBHB population moment
+    (Sec. III A 1 of the paper), the SZQ24 comparison (App. A), the six
+    channel benchmarks and upper limits (Tables 2 and 3), efficiency
+    cross-checks, rate-interval propagation (Table 1), sensitivity cases,
+    and the integrated-energy sums of Eqs. (34)--(35).
+    """
 
     smbhb = smbhb_population_results()
     szq24_audit = szq24_population_moment_audit()
@@ -2976,11 +3213,12 @@ def build_results() -> dict[str, object]:
         "one_pass_audit": one_pass_audit(channels),
         "spectral_diagnostics": spectral_diagnostics(channels),
         "detector_context_audit": detector_context_audit(),
-        "step3b_integrated_energy": step3b_integrated_energy_results(),
+        "step3b_integrated_energy": integrated_energy_results(),
         "interpretation": {
             "aggregation": (
-                "Step 3B emits both the declared benchmark sum and a sum "
-                "formed from the five theoretical-upper-limit cases plus "
+                "The integrated-energy accounting emits both the declared "
+                "benchmark sum and a sum formed from the five "
+                "theoretical-upper-limit cases plus "
                 "one equal-mass SMBHB merger per present-day remnant. The "
                 "sum excludes the repeated-merger fixed-frequency factor. "
                 "The cases were calculated separately and need not occur "
@@ -3021,7 +3259,13 @@ def build_results() -> dict[str, object]:
 def build_spectra(
     f_grid: np.ndarray | None = None,
 ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
-    """Return the common grid and all emitted astrophysical spectra."""
+    """Return the common frequency grid (Hz) and all emitted astrophysical
+    spectra Omega_gw(f) (dimensionless).
+
+    These arrays are written to results/step3-spectra.npz (historical file
+    name, kept so frozen results and pinned hashes stay valid) and drive the
+    Omega_gw panels of Sec. IV / Fig. 2 of the paper.
+    """
 
     if f_grid is None:
         f_grid = np.logspace(-12.0, 4.3, 12_000)
@@ -3076,7 +3320,12 @@ def build_spectra(
 
 
 def verify_normalizations() -> dict[str, float]:
-    """Numerically verify each realizable channel's integrated energy."""
+    """Numerically verify each realizable channel's integrated energy.
+
+    Checks that integrating each channel's Omega_gw over ln f reproduces its
+    analytic present-day energy budget (Eq. (7) of the paper) to better than
+    0.25 percent.  Residuals are dimensionless.
+    """
 
     f = np.logspace(-14.0, 5.0, 50_000)
     residuals: dict[str, float] = {}
@@ -3097,7 +3346,12 @@ def verify_normalizations() -> dict[str, float]:
 
 
 def print_report(results: dict[str, object], residuals: dict[str, float]) -> None:
-    """Print the concise decision ledger used to update the manuscript."""
+    """Print the concise human-readable verification report.
+
+    Summarizes the SMBHB population moment, the SZQ24 comparison, the
+    per-channel benchmarks and upper limits, efficiency cross-checks, and the
+    integrated-energy sums, in the units stated on each line.
+    """
 
     constants = results["constants"]
     smbhb = results["smbhb"]
@@ -3106,7 +3360,7 @@ def print_report(results: dict[str, object], residuals: dict[str, float]) -> Non
     checks = results["efficiency_checks"]
     weighting = checks["bbh_population_weighting"]
 
-    print("PAPER-I ENERGETIC CEILINGS: STEP-3 VERIFICATION RESULTS")
+    print("ENERGETIC CEILINGS AND BENCHMARKS: VERIFICATION RESULTS")
     print("=" * 78)
     print(f"rho_c       = {constants['rho_crit_msun_mpc3']:.6e} Msun Mpc^-3")
     print(f"rho_star    = {constants['rho_star_msun_mpc3']:.6e} Msun Mpc^-3")
@@ -3138,7 +3392,7 @@ def print_report(results: dict[str, object], residuals: dict[str, float]) -> Non
         f"{smbhb['shape_conditional_product_msun_mpc3']:.4e} Msun Mpc^-3"
     )
     print()
-    print("SZQ24 independent population-moment audit")
+    print("SZQ24 independent population-moment cross-check")
     print(
         "  A_fiducial(1/yr)               = "
         f"{szq24['fiducial_log_uniform_one_pass_A_1yr']:.6e}"
@@ -3191,7 +3445,7 @@ def print_report(results: dict[str, object], residuals: dict[str, float]) -> Non
     )
     print()
     nsc = results["nsc_density_audit"]
-    print("Deferred-source checks")
+    print("Population-input cross-checks")
     print(
         f"  eta_NSC unit-occ., median   = "
         f"{nsc['eta_nsc_unit_occupation_median_relation']:.4e}"
@@ -3218,7 +3472,7 @@ def print_report(results: dict[str, object], residuals: dict[str, float]) -> Non
     )
     print()
     step3b = results["step3b_integrated_energy"]
-    print("Step 3B integrated-energy diagnostic")
+    print("Integrated-energy sums")
     print(
         "  SMBHB LM24 inspiral integral = "
         f"{step3b['channels']['smbhb_benchmark']['present_integral_omega_dlnf']:.6e}"

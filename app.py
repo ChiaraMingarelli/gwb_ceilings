@@ -38,7 +38,7 @@ def _log_fmt(x, pos):
 #
 # All conventions, benchmark amplitudes, and detector curves are synchronized
 # with the paper's reproducibility package in reproducibility/
-# (verify_ceilings.py, results/step3-numbers.json, make_fig2_corrected.py);
+# (verify_ceilings.py, results/step3-numbers.json, make_figure3_multiband.py);
 # the main figure mirrors the manuscript's Figure 3.
 # Omega_gw(f) = (2 pi^2 / 3 H0^2) f^3 S_h(f) throughout; detector curves are
 # single-natural-log-bin, SNR-one orientation curves, Omega_n(f)/sqrt(T f).
@@ -87,16 +87,16 @@ RHO_SMBH_FID = 1.8e6  # Liepold & Ma (2024), ApJL 971, L29
 RHO_STELLAR_FID = 630372082.0092556  # 5e-3 x rho_crit
 RHO_NSC_FID = 630372.0820092556  # ETA_NSC_FIDUCIAL = 1e-3 x rho_star
 
-# Six-channel benchmark energy sum (step3b): the sum of the declared
+# Six-channel benchmark energy sum (Eq. (34) of the paper): the sum of the declared
 # benchmark source-event spectra, Sum_i Omega_i dlnf.  A reference sum,
 # not a universal ceiling: the six cases need not occur together.
 BENCHMARK_ENERGY_SUM_OMEGA = 2.0370537460605108e-07  # E_bench^(6)
 
-# Declared benchmark channels, anchored to the paper's audited scalars
+# Declared benchmark channels, anchored to the paper's verified scalars
 # (reproducibility/results/step3-numbers.json).  A_bench is the
 # characteristic strain h_c at f_ref; each band is drawn as the f^{-2/3}
 # inspiral law over [f_min, f_max].  For the phenomenological-shape channels
-# (Pop III, Stellar BBH) f_max is set at the audited spectral peak so the
+# (Pop III, Stellar BBH) f_max is set at the verified spectral peak so the
 # power-law band ends where the true spectrum turns over.  rho_src is the
 # processed source density rho_src = f_merge * rho_res for the table below.
 POPULATIONS = {
@@ -145,7 +145,7 @@ POPULATIONS = {
         'f_ref': 0.1,
         'A_bench': 6.803213932893254e-24,  # popiii_benchmark
         'f_min': 1e-3,
-        'f_max': 15.4,  # audited spectral peak (phenomb shape)
+        'f_max': 15.4,  # spectral peak of the frozen benchmark spectrum (Hz)
         'epsilon_gw': 0.05,
         'rho_src': 733.2211228627597,
         'color': '#56B4E9',
@@ -155,7 +155,7 @@ POPULATIONS = {
         'f_ref': 25.0,
         'A_bench': 4.031480337458788e-25,  # bbh_benchmark
         'f_min': 3.1622776601683795e-5,
-        'f_max': 476.0,  # audited spectral peak (phenomb shape)
+        'f_max': 476.0,  # spectral peak of the frozen benchmark spectrum (Hz)
         'epsilon_gw': 0.05,
         'rho_src': 6592.729111209701,
         'color': '#E69F00',
@@ -181,7 +181,7 @@ detector_labels_omega = {
     'CE': (300, 7e-13),
 }
 
-# Paper multiband-figure visual grammar (matches make_fig2_corrected.py)
+# Paper multiband-figure visual grammar (matches make_figure3_multiband.py)
 CONTEXT_GRAY = '#8A8A8A'
 CONTEXT_LABEL_GRAY = '#666666'
 CONTEXT_ALPHA = 0.38
@@ -218,7 +218,7 @@ SPECTRA_SHA256 = (
 # masks the SMBHB spectrum to its PTA display segment, so the plot curve over
 # [1e-9.5, 1e-5.5] Hz is precomputed with smbhb_population_omega from
 # reproducibility/verify_ceilings.py (full LM24 census benchmark), exactly as
-# in make_fig2_corrected.py.
+# in make_figure3_multiband.py.
 SMBHB_PLOT_CURVE_FILE = (
     Path(__file__).resolve().parent / "data" / "smbhb-plot-curve.npz"
 )
@@ -232,7 +232,7 @@ PTA_CONTEXT_SHA256 = (
     "26afed590123475fc82fd0a2a863f8d00665a52cec728f5cc6fdd329e1338e46"
 )
 
-# Population key -> audited spectrum key in step3-spectra.npz
+# Population key -> spectrum key in the frozen step3-spectra.npz archive
 SPECTRUM_KEYS = {
     'SMBHB': 'smbhb_benchmark',
     'AGN-IMRI': 'agn_imri_benchmark',
@@ -285,7 +285,7 @@ def get_omega_gw(f, A, f_ref, f_min, f_max):
 
 
 # All detector curves below are ported verbatim from the paper's
-# make_fig2_corrected.py (same conventions, same data products).
+# make_figure3_multiband.py (same conventions, same data products).
 
 @st.cache_data
 def get_lisa_sensitivity(f_tuple, T_yrs=4.0):
@@ -436,9 +436,9 @@ def get_dwd_foreground(f_tuple):
 
 @st.cache_data
 def load_benchmark_spectra():
-    """Load the audited paper spectra (hash-pinned step3-spectra.npz).
+    """Load the paper's frozen benchmark spectra (hash-pinned step3-spectra.npz).
 
-    As in make_fig2_corrected.py, the SMBHB curve is replaced with the
+    As in make_figure3_multiband.py, the SMBHB curve is replaced with the
     full-census plot curve over [1e-9.5, 1e-5.5] Hz (precomputed and
     hash-pinned), since the frozen archive masks the SMBHB spectrum to its
     PTA display segment.
@@ -843,7 +843,7 @@ if show_nanograv and not use_hc:
             fontsize=11, ha='left', va='bottom', fontweight='bold',
             path_effects=LABEL_STROKE, zorder=13)
 
-# Populations: audited paper spectra, scaled linearly with reservoir density
+# Populations: the paper's frozen benchmark spectra, scaled linearly with reservoir density
 spec_f, spec_curves = load_benchmark_spectra()
 
 
@@ -995,8 +995,8 @@ census (Newtonian circular inspiral to each source-frame Schwarzschild
 ISCO) with one merger per present-day SMBH, not an ε·ρ product.
 A benchmark is one observationally or theoretically motivated choice; an
 upper limit is the maximum over stated inputs. Amplitudes scale as A ∝ √ρ
-relative to fiducial values. All values from the paper's audited
-reproducibility/results/step3-numbers.json (Table 1 of the paper).
+relative to fiducial values. All values from the frozen results file
+reproducibility/results/step3-numbers.json (Table 2 of the paper).
 """)
 
 # =============================================================================

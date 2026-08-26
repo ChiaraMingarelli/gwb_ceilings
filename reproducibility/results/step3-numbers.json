@@ -925,7 +925,7 @@
     "excluded": {
       "repeated_merger_pta_strain_extension": "The fixed-frequency repeated-merger factor is not applied to the one-generation integrated ceiling.",
       "bbh_pointwise_envelope": "The frequencywise spin envelope is not one realizable population and is never integrated.",
-      "galactic_dwd_foreground": "Contextual Galactic foreground outside the cosmological ledger.",
+      "galactic_dwd_foreground": "Contextual Galactic foreground outside the cosmological energy accounting (Sec. III C).",
       "broadband_smbhb_composite_cumulative": "Retired: only the full-census PTA display segment is emitted; the scalar SMBHB energies use analytic mass moments."
     },
     "channels": {
@@ -1181,7 +1181,7 @@
     }
   },
   "interpretation": {
-    "aggregation": "Step 3B emits both the declared benchmark sum and a sum formed from the five theoretical-upper-limit cases plus one equal-mass SMBHB merger per present-day remnant. The sum excludes the repeated-merger fixed-frequency factor. The cases were calculated separately and need not occur together, so the sum is not a physical ceiling.",
+    "aggregation": "The integrated-energy accounting emits both the declared benchmark sum and a sum formed from the five theoretical-upper-limit cases plus one equal-mass SMBHB merger per present-day remnant. The sum excludes the repeated-merger fixed-frequency factor. The cases were calculated separately and need not occur together, so the sum is not a physical ceiling.",
     "smbhb_interval": "CNM-to-fmerge mapping is conditional on the central LM24 full-census shape, mass-ratio distribution, and redshift kernel; no additional primary-mass selection is imposed",
     "smbhb_provenance": "2.11e-15 is derived from the full convergent moment of the erratum-corrected analytic LM24 fit normalized to the 1.8e6 Msun/Mpc^3 census, with no additional primary-mass cut; it is consistent with LM24's published 2.0e-15 forward result",
     "lvk_history": "constant comoving source-frame rate over a 10-Gyr lookback interval, with redshift dilution and shifted support explicit",

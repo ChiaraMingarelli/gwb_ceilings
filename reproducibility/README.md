@@ -1,10 +1,10 @@
 # Reproducibility package for *Energetic Ceilings and Benchmarks of Astrophysical Gravitational-Wave Backgrounds*
 
-This directory is the public-facing numerical package for the paper.  It
-contains the authoritative six-channel energy ledger, the published-summary
-SMBHB merger-factor inference, regression tests, detector inputs, and figure
-builders.  Drafts, referee material, literature PDFs, old notebooks, and the
-companion AGN--IMRI paper are deliberately outside this directory.
+This directory is the public numerical package for the paper.  It contains
+the deterministic six-channel benchmark calculation, the published-summary
+SMBHB merger-factor inference, regression tests, detector inputs, and the
+figure builders.  Drafts and other working material are deliberately outside
+this directory.
 
 ## Scientific scope
 
@@ -35,18 +35,24 @@ stated-input theoretical upper-limit cases, not physical ceilings.
 
 ```text
 reproducibility/
-  verify_ceilings.py                 authoritative deterministic ledger
-  make_figure1_plane_forest.py       PTA comparison figure
-  make_fig2_corrected.py             fully reproducible multiband figure
-  fmerge/                            published-summary posterior calculation
+  verify_ceilings.py                 deterministic benchmark calculation
+  make_figure1_plane_forest.py       PTA comparison figure (Figure 1)
+  make_figure3_multiband.py             fully reproducible multiband figure (Figure 3)
+  fmerge/                            published-summary posterior calculation (Figure 2)
   tests/                             numerical and figure regression tests
   data/detectors/                    detector inputs with provenance and hashes
   data/pta/                          provenance note for optional PTA context
   results/                           frozen JSON/NPZ reference results
   figures/                           generated figures
   tools/                             release checks and manuscript sync
-  archive/author-figure3/            audited input for the author-layout figure
+  archive/author-figure3/            hash-pinned input for the author-layout figure
 ```
+
+The frozen results archive under `results/` keeps its historical file names,
+`step3-numbers.json` and `step3-spectra.npz` (and the JSON key
+`step3b_integrated_energy`), so the frozen results and their pinned hashes
+remain valid; the rest of this document simply calls them the frozen results
+archive.
 
 ## Quick start
 
@@ -70,7 +76,7 @@ standalone wheel is not currently a supported distribution format.
 The individual commands are:
 
 ```bash
-# Deterministic ledger and spectra
+# Deterministic benchmark numbers and spectra (the frozen results archive)
 python verify_ceilings.py \
   --json results/step3-numbers.json \
   --npz results/step3-spectra.npz
@@ -85,7 +91,7 @@ python fmerge/lm24_cnm_posterior.py \
 # Tests
 python -m unittest -v \
   tests/test_verify_ceilings.py \
-  tests/test_phasev_figure_context.py
+  tests/test_figure_context.py
 python -m unittest -v fmerge/test_lm24_cnm_posterior.py
 ```
 
@@ -95,8 +101,10 @@ directory and compares their scientific contents with `results/`.
 ## Figures and manuscript assets
 
 `make figures` writes all generated PDFs and PNGs to `figures/`.  The PTA
-forest, `f_merge` plot, and `gwb-ceilings-reproducible.pdf` multiband plot are
-the direct manuscript assets.  The multiband figure contains the six benchmark
+forest (the paper's Figure 1), the `f_merge` plot (Figure 2), and the
+`gwb-ceilings-reproducible.pdf` multiband plot (the code-generated
+equivalent of Figure 3) are the direct manuscript assets.  The multiband
+figure contains the six benchmark
 spectra and intentionally omits the cumulative energy panel.  The full-census
 SMBHB curve is solid from $10^{-9}$ to $10^{-6}$ Hz, with short dashed guide
 extensions on both sides; its total modeled energy is calculated separately
@@ -104,7 +112,7 @@ from the global mass budget.
 
 Run `make check-paper-assets` to compare generated assets with the sibling
 manuscript.  `make sync-paper-assets` is the explicit write operation; it
-copies only the three approved PDFs.
+copies only the three manuscript figure PDFs.
 
 ## Optional PTA plotting context
 
@@ -119,7 +127,7 @@ calculation, integrated energy, or the fixed-slope `f_merge` inference, which
 uses only published amplitude quantiles.
 
 An archive at another location can be supplied explicitly with
-`make_fig2_corrected.py --pta-context PATH`.  See `data/pta/README.md`.
+`make_figure3_multiband.py --pta-context PATH`.  See `data/pta/README.md`.
 
 ## Public release notes
 

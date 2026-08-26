@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Plot the reconstructed SMBHB merger-factor distribution."""
+"""Build the paper's Figure 2, the reconstructed SMBHB f_merge posterior.
+
+Reads the propagated draws written by ``lm24_cnm_posterior.py`` and renders
+the probability density of the dimensionless merger factor f_merge with its
+median and equal-tailed 90% interval, f_merge = 1.11 (+1.35, -0.63)
+(Eq. (14) of Mingarelli 2026, arXiv:2601.18859).  The default PDF output,
+figures/fmerge-posterior.pdf, is the manuscript asset for Figure 2.
+"""
 
 import argparse
 from pathlib import Path

@@ -596,7 +596,7 @@ class Step3CalculationTests(unittest.TestCase):
         )
         self.assertEqual(
             step3b["included_components"],
-            ("smbhb_benchmark",) + vc.STEP3B_BENCHMARK_CHANNEL_KEYS,
+            ("smbhb_benchmark",) + vc.INTEGRATED_SUM_BENCHMARK_KEYS,
         )
         self.assertGreater(
             smbhb["fraction_of_conditional_benchmark_sum"],

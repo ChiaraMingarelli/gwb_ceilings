@@ -1,22 +1,29 @@
-"""Build the separate PTA forest and fixed-shape SMBHB inference figures.
+"""Build the paper's Figure 1 (PTA amplitude forest) and a diagnostic figure.
 
-The inference plane maps the merger factor onto the available SMBHB mass
-density after the adopted M1>=1e8-Msun population selection.  The blue band is
+Figure 1 of Mingarelli (2026), "Energetic Ceilings and Benchmarks of
+Astrophysical Gravitational-Wave Backgrounds" (arXiv:2601.18859), compares
+the SMBHB benchmark amplitude A_bench (the f_merge=1 case of Sec. III A 1)
+and the repeated-merger ceiling A_ceil (Eq. (12) of the paper) with
+published PTA power-law amplitudes at f = 1/yr and fixed gamma=13/3.  All
+amplitudes are dimensionless characteristic-strain amplitudes A_yr.  A
+forest plot is used because the quoted intervals carry different statistical
+meanings across collaborations; interval and estimator semantics follow the
+source papers and are restated in the figure caption.  The row labels are
+rendered by matplotlib at final column size, so the exported PDF
+(figures/pta-amplitude-forest.pdf, the manuscript asset for Figure 1) drops
+into the manuscript column with no trimming and no external label pass.
+
+The second output is a diagnostic SMBHB inference plane, not included in
+the published paper.  It maps the merger factor f_merge (Eq. (13) of the
+paper) onto the SMBHB mass density available after the adopted
+M1>=1e8-Msun population selection, in Msun Mpc^-3.  The blue band is
 the Liepold--Ma (2024; LM24) 90% density interval after the same selection.
 The orange band is the NANOGrav 15-year customized-chromatic-noise (CNM) 90%
 credible interval mapped through the fixed population shape.  Values above
 f_merge=1 represent repeated mergers rather than a fraction of distinct black
-holes.  The SZQ24 fixed-frequency h_c^2 hierarchy boost is shown at the same
-numerical ordinate for comparison; it is not an f_merge limit.
-
-The forest figure compares the approved benchmark with f_merge=1 and the
-repeated-merger ceiling with published PTA power-law amplitudes
-at 1/yr and fixed gamma=13/3.  It deliberately uses a
-forest plot rather than the retired synthetic probability-density histogram.
-Interval and estimator semantics follow the source papers and are stated in
-the caption.  The row labels are rendered by matplotlib at final column size,
-so the exported PDF drops into the manuscript at width=\columnwidth with no
-trimming and no external label pass.
+holes.  The SZQ24 fixed-frequency h_c^2 hierarchy boost (App. A of the
+paper) is shown at the same numerical ordinate for comparison; it is not an
+f_merge limit.
 
 The authoritative SMBHB calculation values are imported from
 ``verify_ceilings.py``.  Observational values are transcribed from:
@@ -72,7 +79,8 @@ COLORS = {
     "gray": "#777777",
 }
 
-# LM24 quote for the local SMBH mass density (90% confidence interval).
+# LM24 quote for the local SMBH mass density in Msun Mpc^-3
+# (90% confidence interval); see Eq. (9) of the paper.
 LM24_RHO_LOW = 1.3e6
 LM24_RHO_HIGH = 2.6e6
 
@@ -81,7 +89,7 @@ INFERENCE_Y_MAX = 4.0
 
 @dataclass(frozen=True)
 class ForestPoint:
-    """One row of the PTA comparison, in units of 1e-15."""
+    """One row of the PTA comparison; amplitudes A_yr in units of 1e-15."""
 
     label: str
     central: float
@@ -201,7 +209,12 @@ def configure_style() -> None:
 
 
 def draw_inference_plane(ax: plt.Axes, smbhb: dict[str, float]) -> None:
-    """Draw the available-mass--merger-factor inference plane."""
+    """Draw the diagnostic plane of merger factor versus available mass.
+
+    The abscissa is the SMBHB mass density retained after the population
+    selection (Msun Mpc^-3); the ordinate is the merger factor f_merge of
+    Eq. (13) of the paper (dimensionless).
+    """
 
     retained_fraction = smbhb["retained_mass_density_fraction_benchmark"]
     rho_res_central = smbhb["participant_mass_density_benchmark_msun_mpc3"]

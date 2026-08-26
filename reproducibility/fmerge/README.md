@@ -3,13 +3,15 @@
 This directory contains the reproducible calculation that combines the
 population uncertainty reported by Liepold & Ma (2024; LM24) with the
 NANOGrav 15-year customized-noise-model (CNM) amplitude. Its primary output
-is the manuscript distribution for the SMBHB processed-mass factor,
-f_merge, using the LM24 Appendix-B approximation directly.
+is the paper's distribution for the SMBHB processed-mass factor f_merge —
+Eq. (14) of the paper, plotted in Figure 2 — using the LM24 Appendix-B
+approximation directly.
 
 The calculation is deliberately separate from verify_ceilings.py. That file
-is the deterministic central-value ledger used by the manuscript figures.
-This directory reconstructs probability distributions and uses random draws,
-so its assumptions, prior, seed, and outputs are versioned together.
+is the deterministic central-value calculation used by the manuscript
+figures. This directory reconstructs probability distributions and uses
+random draws, so its assumptions, prior, seed, and outputs are versioned
+together.
 
 ## Scientific status
 
@@ -140,7 +142,7 @@ and array keys are written to the JSON summary.
 The confirmation flags are deliberate: the program can validate arrays and
 hashes, but it cannot infer their scientific meaning from numbers alone.
 
-## Tests and audit targets
+## Tests and validation targets
 
 The tests cover:
 
@@ -188,7 +190,8 @@ declared prior.
 
 ## Relation to the deterministic benchmark
 
-The manuscript uses f_merge = 1.11 (+1.35, -0.63), obtained directly from
+The manuscript uses f_merge = 1.11 (+1.35, -0.63) at 90% credibility
+(Eq. (14) of the paper), obtained directly from
 the full-census LM24 Appendix-B approximation. Its median amplitude,
 1.983e-15, is close to but not identical to the deterministic full-census
 benchmark, A_bench = 2.108e-15. No recentering is applied.
@@ -200,7 +203,8 @@ computed 90% interval; together they mean the quoted percentiles should not
 be read beyond two significant figures.
 
 - Schechter-amplitude flooring: 18.09% of archived draws floor at least one
-  coefficient, following the audited LM24 helper procedure. Alternative
+  coefficient, following the LM24 helper procedure at the pinned commit.
+  Alternative
   handling of those draws is a reconstruction sensitivity.
 - Host-mass domain: the calculation follows the helper's declared 10^8.5 to
   10^12 solar-mass range and does not extrapolate beyond it.
@@ -223,7 +227,7 @@ chain, and resampling cannot create additional independent information.
 
 - [Liepold & Ma (2024)](https://doi.org/10.3847/2041-8213/ad66b8),
   especially Eq. (2), Eqs. (4)–(6), and Appendix B.
-- [LM24 author helper repository at the audited commit](https://github.com/EmilyLiepold/LM24_helpers/commit/2092837e91197df16d5231d5845628638afd62ea).
+- [LM24 author helper repository at the pinned commit](https://github.com/EmilyLiepold/LM24_helpers/commit/2092837e91197df16d5231d5845628638afd62ea).
 - [Liepold & Ma (2026) erratum](https://doi.org/10.3847/2041-8213/ae5f96).
   It corrects only the printed single-Schechter shortcut and explicitly leaves
   the galaxy-derived black-hole mass function and all published results

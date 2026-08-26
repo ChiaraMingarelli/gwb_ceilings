@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Correct only the AGN--IMRI normalization in the author-finished Figure 3.
 
-The publication PDF was finished in Keynote after the code-generated plot was
-exported.  Its labels and page layout therefore cannot be reproduced by simply
-rerunning ``make_fig2_corrected.py``.  The only stale plotted quantity is the
-AGN--IMRI benchmark, which used R_BBH=30 instead of the adopted 30.4
-Gpc^-3 yr^-1.  Because Omega_gw is linear in this rate, the correction is a
-uniform translation in log(Omega_gw).
+The published Figure 3 PDF was finished in Keynote after the code-generated
+plot was exported.  Its labels and page layout therefore cannot be
+reproduced by simply rerunning ``make_figure3_multiband.py``.  The only
+stale plotted quantity is the AGN--IMRI benchmark (Sec. III A 2 of the
+paper), which used a BBH merger rate of R_BBH=30 instead of the adopted
+30.4 Gpc^-3 yr^-1.  Because Omega_gw is linear in this rate, the correction
+is a uniform translation in log(Omega_gw).
 
 This script edits the single vector content stream, changing only:
 
@@ -307,7 +308,7 @@ def patch_pdf(source: Path, output: Path) -> None:
     require(source != output, "source and output must be different files")
     require(
         sha256_file(source) == EXPECTED_SOURCE_SHA256,
-        "refusing to patch: source is not the audited author-finished PDF",
+        "refusing to patch: source is not the pinned author-finished PDF",
     )
 
     source_reader = PdfReader(source, strict=False)
@@ -323,7 +324,7 @@ def patch_pdf(source: Path, output: Path) -> None:
     patched_content, curve_count = patch_curve_paths(patched_content, delta_page)
     require(
         sha256_bytes(patched_content) == EXPECTED_PATCHED_CONTENT_SHA256,
-        "patched content does not match the audited result",
+        "patched content does not match the pinned result",
     )
 
     temporary_path: Path | None = None
@@ -372,7 +373,7 @@ def parse_args() -> argparse.Namespace:
         "--source",
         type=Path,
         default=DEFAULT_SOURCE,
-        help="audited author-finished source PDF",
+        help="author-finished source PDF, accepted only at its pinned SHA-256",
     )
     parser.add_argument(
         "--output",
