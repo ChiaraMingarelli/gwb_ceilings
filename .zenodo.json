@@ -1,0 +1,30 @@
+{
+  "title": "gwb_ceilings: code and reproducibility package for \"Energetic Ceilings and Benchmarks of Astrophysical Gravitational-Wave Backgrounds\"",
+  "description": "<p>Code accompanying Mingarelli (2026), \"Energetic Ceilings and Benchmarks of Astrophysical Gravitational-Wave Backgrounds\" (arXiv:2601.18859).</p><p>The repository contains (1) the paper's reproducibility package (<code>reproducibility/</code>): the deterministic six-channel benchmark calculation, the SMBHB merger-factor inference from published summary values, regression tests, detector inputs with documented provenance and SHA-256 hashes, frozen reference results, and the builders for the three manuscript figures; and (2) an interactive Streamlit application (<code>app.py</code>) for exploring how gravitational-wave-background amplitudes scale with the available mass reservoirs.</p><p>The software is released under the MIT license. The third-party detector data files in <code>reproducibility/data/detectors/</code> are redistributed with full provenance and are not covered by the software license; see <code>REDISTRIBUTION_CLEARANCE.md</code> in that directory for their terms.</p>",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Mingarelli, Chiara M. F.",
+      "affiliation": "Yale University",
+      "orcid": "0000-0002-4307-1322"
+    }
+  ],
+  "license": "MIT",
+  "version": "1.0.0",
+  "keywords": [
+    "gravitational waves",
+    "stochastic gravitational-wave background",
+    "pulsar timing arrays",
+    "supermassive black holes",
+    "LISA",
+    "reproducibility"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "arXiv:2601.18859",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-article",
+      "scheme": "arxiv"
+    }
+  ]
+}
