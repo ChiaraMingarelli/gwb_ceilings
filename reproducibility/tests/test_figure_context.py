@@ -349,7 +349,7 @@ class FigureContextTests(unittest.TestCase):
             r"\includegraphics[width=\linewidth]{figure3-final.pdf}",
             manuscript,
         )
-        self.assertIn("not the filled areas here", manuscript)
+        self.assertIn("Colored shading is visual only", manuscript)
         self.assertNotIn("The lower panel shows the cumulative energy fraction", manuscript)
         self.assertIn(r"\label{eq:omega-strain}", manuscript)
         self.assertIn("LM24 90% confidence interval", plane_source)
@@ -434,7 +434,11 @@ class FigureContextTests(unittest.TestCase):
         self.assertIn(r"\textbf{PTA amplitude comparison.}", manuscript)
         self.assertIn(r"fixed-$\gamma=13/3$", manuscript)
         self.assertIn(
-            "and all fit comfortably within the ceiling.",
+            "With the exception of the latter, they",
+            " ".join(manuscript.split()),
+        )
+        self.assertIn(
+            "fit comfortably within the ceiling.",
             " ".join(manuscript.split()),
         )
         self.assertIn(

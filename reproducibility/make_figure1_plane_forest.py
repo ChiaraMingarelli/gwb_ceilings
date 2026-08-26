@@ -3,7 +3,7 @@
 Figure 1 of Mingarelli (2026), "Energetic Ceilings and Benchmarks of
 Astrophysical Gravitational-Wave Backgrounds" (arXiv:2601.18859), compares
 the SMBHB benchmark amplitude A_bench (the f_merge=1 case of Sec. III A 1)
-and the repeated-merger ceiling A_ceil (Eq. (12) of the paper) with
+and the repeated-merger ceiling A_ceil (Eq. (13) of the paper) with
 published PTA power-law amplitudes at f = 1/yr and fixed gamma=13/3.  All
 amplitudes are dimensionless characteristic-strain amplitudes A_yr.  A
 forest plot is used because the quoted intervals carry different statistical
@@ -14,7 +14,7 @@ rendered by matplotlib at final column size, so the exported PDF
 into the manuscript column with no trimming and no external label pass.
 
 The second output is a diagnostic SMBHB inference plane, not included in
-the published paper.  It maps the merger factor f_merge (Eq. (13) of the
+the published paper.  It maps the merger factor f_merge (Eq. (14) of the
 paper) onto the SMBHB mass density available after the adopted
 M1>=1e8-Msun population selection, in Msun Mpc^-3.  The blue band is
 the Liepold--Ma (2024; LM24) 90% density interval after the same selection.
@@ -80,7 +80,7 @@ COLORS = {
 }
 
 # LM24 quote for the local SMBH mass density in Msun Mpc^-3
-# (90% confidence interval); see Eq. (9) of the paper.
+# (90% confidence interval); see Eq. (11) of the paper.
 LM24_RHO_LOW = 1.3e6
 LM24_RHO_HIGH = 2.6e6
 
@@ -213,7 +213,7 @@ def draw_inference_plane(ax: plt.Axes, smbhb: dict[str, float]) -> None:
 
     The abscissa is the SMBHB mass density retained after the population
     selection (Msun Mpc^-3); the ordinate is the merger factor f_merge of
-    Eq. (13) of the paper (dimensionless).
+    Eq. (14) of the paper (dimensionless).
     """
 
     retained_fraction = smbhb["retained_mass_density_fraction_benchmark"]

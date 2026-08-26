@@ -87,7 +87,7 @@ RHO_SMBH_FID = 1.8e6  # Liepold & Ma (2024), ApJL 971, L29
 RHO_STELLAR_FID = 630372082.0092556  # 5e-3 x rho_crit
 RHO_NSC_FID = 630372.0820092556  # ETA_NSC_FIDUCIAL = 1e-3 x rho_star
 
-# Six-channel benchmark energy sum (Eq. (34) of the paper): the sum of the declared
+# Six-channel benchmark energy sum (Eq. (35) of the paper): the sum of the declared
 # benchmark source-event spectra, Sum_i Omega_i dlnf.  A reference sum,
 # not a universal ceiling: the six cases need not occur together.
 BENCHMARK_ENERGY_SUM_OMEGA = 2.0370537460605108e-07  # E_bench^(6)
@@ -1043,7 +1043,8 @@ st.markdown("""
 Propagating the NANOGrav CNM amplitude through the LM24 census gives the
 SMBHB merger factor **f_merge = 1.11 +1.35/−0.63 (90%)**: the 90% interval
 includes f_merge = 1, so the measured background is consistent with one
-merger per present-day SMBH. All published PTA amplitudes fit comfortably
+merger per present-day SMBH. With the exception of CPTA DR1, whose 95%
+interval extends above it, the published PTA amplitudes fit comfortably
 within the physical ceiling of 3.76 × 10⁻¹⁵.
 """)
 

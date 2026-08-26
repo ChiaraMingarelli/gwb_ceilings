@@ -4,7 +4,7 @@ This directory contains the reproducible calculation that combines the
 population uncertainty reported by Liepold & Ma (2024; LM24) with the
 NANOGrav 15-year customized-noise-model (CNM) amplitude. Its primary output
 is the paper's distribution for the SMBHB processed-mass factor f_merge —
-Eq. (14) of the paper, plotted in Figure 2 — using the LM24 Appendix-B
+Eq. (15) of the paper, plotted in Figure 2 — using the LM24 Appendix-B
 approximation directly.
 
 The calculation is deliberately separate from verify_ceilings.py. That file
@@ -191,7 +191,7 @@ declared prior.
 ## Relation to the deterministic benchmark
 
 The manuscript uses f_merge = 1.11 (+1.35, -0.63) at 90% credibility
-(Eq. (14) of the paper), obtained directly from
+(Eq. (15) of the paper), obtained directly from
 the full-census LM24 Appendix-B approximation. Its median amplitude,
 1.983e-15, is close to but not identical to the deterministic full-census
 benchmark, A_bench = 2.108e-15. No recentering is applied.

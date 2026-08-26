@@ -4,7 +4,7 @@
 This script is the reproducible SMBHB merger-factor calculation of
 Mingarelli (2026), "Energetic Ceilings and Benchmarks of Astrophysical
 Gravitational-Wave Backgrounds" (arXiv:2601.18859).  Its output underlies
-Eq. (14) of the paper, f_merge = 1.11 (+1.35, -0.63) at 90% credibility,
+Eq. (15) of the paper, f_merge = 1.11 (+1.35, -0.63) at 90% credibility,
 and the distribution shown in Figure 2 (fmerge-posterior.pdf).
 
 It reconstructs the *approximate* Liepold & Ma (2024; LM24) galaxy stellar
@@ -12,7 +12,7 @@ mass-function posterior described in their Appendix B, propagates every draw
 through the McConnell & Ma (2013) black-hole--bulge relation, and evaluates
 the full-census Phinney population moment at f = 1/yr.  It then maps
 independent draws of the NANOGrav 15-year customized-noise-model (CNM)
-amplitude through Eq. (13) of the paper,
+amplitude through Eq. (14) of the paper,
 
     f_merge = (A_CNM / A_model[f_merge=1])**2.
 
