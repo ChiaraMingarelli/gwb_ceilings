@@ -18,7 +18,8 @@ The package reproduces:
 - the one-at-a-time LVK rate/evolution checks and the O1--O4a stochastic-limit
   inversion;
 - the approximate posterior for the SMBHB processed-mass factor
-  `f_merge`, constructed from published summary information; and
+  `f_merge`, constructed from published summary information with the
+  reservoir and population inputs fixed for each LM24 BHMF realization; and
 - the numerical content of the three manuscript figures.
 
 The LVK intervals propagated here are rate-only unless the output explicitly

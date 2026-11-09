@@ -79,10 +79,22 @@ For each realization, the code:
 The calculation depends only on NumPy. Gauss–Legendre quadrature is used for
 the stellar-mass, mass-ratio, and redshift integrals.
 
-Here f_merge is an effective processed-mass normalization while the
-population shape is held fixed. It is not a capture probability, and values
-above unity are not by themselves a self-consistent hierarchical merger
-model.
+Here f_merge retains the manuscript definition: the mass involved in mergers,
+summed over all events, relative to the available SMBH mass reservoir. For each
+LM24 BHMF realization, the reservoir, binary-mass distribution, mass-ratio
+and redshift distributions, radiative efficiency, and history-spectrum factor
+H(f) are fixed as f_merge varies. Thus h_c^2 is proportional to f_merge, and
+the reference LM24 model prediction has f_merge=1. The calculation propagates
+uncertainty between BHMF realizations while applying this scaling within
+each realization.
+
+Adding generations to the mass-conserving SZQ24 hierarchy is a different
+variation: each generation involves the same total mass, but earlier
+generations contain less massive binaries and change H(f). Consequently
+f_merge grows linearly with the number of generations while the
+fixed-frequency strain converges. The amplitude-ratio inference above is
+conditional on the fixed population inputs, not a reconstruction of that
+hierarchy. This clarification leaves the saved draws and prior unchanged.
 
 ## Reproduce the calculation
 
@@ -177,8 +189,8 @@ Manuscript f_merge                     1.110 [0.478, 2.463]
 f_merge, prior-uniform sensitivity     1.413 [0.625, 3.099]
 ```
 
-The one-merger value `f_merge=1` lies within the reconstructed interval, so
-the data do not require `f_merge>1` under the stated population model.
+The LM24 model prediction, `f_merge=1`, lies within the reconstructed interval,
+so the data do not require `f_merge>1` under the stated population model.
 Doubling the draw count from 131,072 to 262,144 moves every reported 5th,
 50th, and 95th percentile above by at most 0.34%. The tests separately verify
 quadrature convergence at much tighter tolerance.

@@ -1874,8 +1874,8 @@ def channel_inputs() -> dict[str, SpectralChannel]:
                 1.0e-4 * rho_nuc,
                 0.0,
                 (
-                    "Scalar benchmark; published all-sky rate lacks the "
-                    "redshift distribution needed for a unique conversion"
+                    "Illustrative zero-redshift benchmark; M1 total rate "
+                    "motivates the mass scale, not the capture history"
                 ),
             ),
             f_ref_hz=1.0e-2,
@@ -2692,9 +2692,10 @@ def emri_rate_proxy_audit() -> dict[str, object]:
     A uniform-volume, 10-Gyr conversion of the Babak et al. model rates
     (yr^-1) to processed mass densities (Msun Mpc^-3), used only to show why
     the f_merge = 1e-4 benchmark of Sec. III B 1 (Eqs. (23)--(24) of the
-    paper) is a motivated scale.  The source paper does not publish the
-    redshift distribution needed to turn its observer-time all-sky totals
-    into a unique cosmic processed density.
+    paper) is a motivated scale.  The source models include redshift
+    dependence, which this proxy does not implement.  Dividing their
+    observer-time all-sky totals by volume is not a reconstruction of the
+    source-time capture history.
     """
 
     volume = comoving_volume_mpc3(4.5)
